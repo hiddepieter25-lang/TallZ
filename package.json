@@ -1,0 +1,7 @@
+{
+  "name": "tall-fit-marketplace",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ]
+}
