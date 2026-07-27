@@ -30,6 +30,23 @@ export function guessRegion(url) {
   return "US";
 }
 
+// Same best-effort TLD proxy as guessRegion/guessCurrency, used by
+// discover-retailers.mjs to fill in the "country" field with no human
+// involved — matches the granularity already used for existing retailers
+// (e.g. "Germany" rather than a generic "EU").
+export function guessCountry(url) {
+  const host = new URL(url).hostname;
+  if (/\.co\.uk$|\.uk$/.test(host)) return "UK";
+  if (/\.nz$/.test(host)) return "New Zealand";
+  if (/\.com\.au$|\.au$/.test(host)) return "Australia";
+  if (/\.de$/.test(host)) return "Germany";
+  if (/\.fr$/.test(host)) return "France";
+  if (/\.nl$/.test(host)) return "Netherlands";
+  if (/\.it$/.test(host)) return "Italy";
+  if (/\.es$/.test(host)) return "Spain";
+  return "USA";
+}
+
 export function guessCategory(title) {
   const t = title.toLowerCase();
   if (/cardigan|sweater|jumper|\bknit/.test(t)) return "Knitwear";
