@@ -15,6 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: npm ci
       - run: node scripts/sync-retailers.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
