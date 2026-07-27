@@ -1,64 +1,22 @@
+import { adminPassword } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 
-interface RetailerRow {
-  id: string;
-  name: string;
-}
-
-interface ProductRow {
-  id: string;
+interface RetailerHealthRow {
   retailer_id: string;
-  color: string | null;
-  material: string | null;
-  pattern: string | null;
-  product_images: { id: string }[];
-}
-
-interface RetailerHealth {
-  id: string;
   name: string;
-  productCount: number;
-  photoPct: number;
-  completePct: number;
+  last_synced: string | null;
+  product_count: number;
+  photo_pct: number;
+  complete_pct: number;
 }
 
-// `retailers`/`products`/`product_images` all have public-read RLS policies
-// (same ones the live site itself relies on), so this page computes health
-// from a direct query — no admin RPC needed for these three columns.
-// "Last synced" would need to read `ingestion_jobs`, which has no public
-// policy; that column is a follow-up once the admin_list_retailer_health
-// database function can be applied (see chat — currently blocked pending
-// approval of that database change).
 export default async function AdminRetailers() {
   const supabase = await createClient();
-
-  const [{ data: retailers, error: retailersError }, { data: products, error: productsError }] =
-    await Promise.all([
-      supabase.from("retailers").select("id, name").order("name"),
-      supabase
-        .from("products")
-        .select("id, retailer_id, color, material, pattern, product_images(id)")
-        .eq("active", true),
-    ]);
-
-  const rows: RetailerRow[] = retailers ?? [];
-  const allProducts: ProductRow[] = (products ?? []) as ProductRow[];
-
-  const health: RetailerHealth[] = rows.map((r) => {
-    const forRetailer = allProducts.filter((p) => p.retailer_id === r.id);
-    const count = forRetailer.length;
-    const withPhoto = forRetailer.filter((p) => p.product_images.length > 0).length;
-    const complete = forRetailer.filter((p) => p.color && p.material && p.pattern).length;
-    return {
-      id: r.id,
-      name: r.name,
-      productCount: count,
-      photoPct: count ? Math.round((withPhoto / count) * 100) : 0,
-      completePct: count ? Math.round((complete / count) * 100) : 0,
-    };
+  const { data, error } = await supabase.rpc("admin_list_retailer_health", {
+    p_password: adminPassword(),
   });
 
-  const error = retailersError || productsError;
+  const rows = (data ?? []) as RetailerHealthRow[];
 
   return (
     <div>
@@ -81,18 +39,20 @@ export default async function AdminRetailers() {
             </tr>
           </thead>
           <tbody>
-            {health.map((r) => (
-              <tr key={r.id} className="border-b border-line">
+            {rows.map((r) => (
+              <tr key={r.retailer_id} className="border-b border-line">
                 <td className="py-3 pr-3 font-medium">{r.name}</td>
-                <td className="py-3 pr-3">{r.productCount}</td>
-                <td className="py-3 pr-3">{r.photoPct}%</td>
-                <td className="py-3 pr-3">{r.completePct}%</td>
-                <td className="py-3 pr-3 text-muted">not available yet</td>
+                <td className="py-3 pr-3">{r.product_count}</td>
+                <td className="py-3 pr-3">{r.photo_pct}%</td>
+                <td className="py-3 pr-3">{r.complete_pct}%</td>
+                <td className="py-3 pr-3 text-muted">
+                  {r.last_synced ? new Date(r.last_synced).toLocaleString() : "never"}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {health.length === 0 && <p className="py-6 text-sm text-muted">No retailers yet.</p>}
+        {rows.length === 0 && <p className="py-6 text-sm text-muted">No retailers yet.</p>}
       </div>
     </div>
   );
