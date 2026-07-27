@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
- * Unattended re-sync across every retailer in scripts/retailers.json — the
+ * Unattended re-sync across every approved retailer in the database — the
  * scheduled counterpart to the manual pull-shopify-products.mjs flow.
+ * Approved retailers come from two places: the original manually-onboarded
+ * ones, and candidates discover-retailers.mjs found that an admin approved
+ * via /admin/retailers.
  *
  * There is no photo-review step and nothing gets printed as SQL for a human
  * to paste: new products are written straight to Supabase with
@@ -14,16 +17,14 @@
  * Usage:   node scripts/sync-retailers.mjs
  * Requires env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
-import { readFile } from "node:fs/promises";
 import { fetchProducts, buildCandidates, guessCurrency } from "./lib/shopify-source.mjs";
 import {
   createServiceClient,
-  upsertRetailer,
+  getApprovedRetailers,
   insertNewProducts,
   logIngestionJob,
 } from "./lib/supabase-write.mjs";
 
-const QUEUE_FILE = new URL("./retailers.json", import.meta.url);
 const SOURCE_TYPE = "shopify_products_json";
 const FETCH_LIMIT = 100; // page 1 only, same as the manual flow — no pagination
 const CANDIDATE_POOL = 100; // don't pre-truncate candidates before dedup; the
@@ -41,33 +42,32 @@ async function syncRetailer(supabase, retailer) {
     type: retailer.type,
     max: CANDIDATE_POOL,
   });
-  const retailerId = await upsertRetailer(supabase, retailer);
   const currency = retailer.currency || guessCurrency(retailer.url);
   const { inserted, alreadyKnown, deferred } = await insertNewProducts(
     supabase,
-    retailerId,
+    retailer.id,
     candidates,
     currency,
     { maxNew: MAX_NEW_PER_RUN }
   );
-  return { retailerId, inserted, alreadyKnown, deferred };
+  return { inserted, alreadyKnown, deferred };
 }
 
 async function main() {
   const supabase = createServiceClient();
-  const retailers = JSON.parse(await readFile(QUEUE_FILE, "utf8"));
+  const retailers = await getApprovedRetailers(supabase);
 
   let hadFailure = false;
 
   for (const retailer of retailers) {
     console.log(`\n${retailer.name} (${retailer.url})`);
     try {
-      const { retailerId, inserted, alreadyKnown, deferred } = await syncRetailer(supabase, retailer);
+      const { inserted, alreadyKnown, deferred } = await syncRetailer(supabase, retailer);
       console.log(
         `  ${inserted} new, ${alreadyKnown} already known${deferred ? `, ${deferred} deferred to next run` : ""}`
       );
       await logIngestionJob(supabase, {
-        retailerId,
+        retailerId: retailer.id,
         sourceType: SOURCE_TYPE,
         status: "success",
         itemsIngested: inserted,
@@ -83,20 +83,16 @@ async function main() {
         if (err[field]) console.error(`    ${field}: ${err[field]}`);
       }
       if (err.cause) console.error(`    cause: ${err.cause}`);
-      // Best-effort job log — upsertRetailer itself may be what failed, in
-      // which case there's no retailer_id to log against and the
-      // console.error above (surfaced via non-zero exit in CI) is the record.
       try {
-        const retailerId = await upsertRetailer(supabase, retailer);
         await logIngestionJob(supabase, {
-          retailerId,
+          retailerId: retailer.id,
           sourceType: SOURCE_TYPE,
           status: "error",
           itemsIngested: 0,
           errors: err.message,
         });
       } catch {
-        // Swallowed — see comment above.
+        // Best-effort — the console.error above is the record either way.
       }
     }
   }

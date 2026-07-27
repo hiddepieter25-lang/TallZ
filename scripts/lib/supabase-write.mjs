@@ -66,32 +66,43 @@ export function createServiceClient() {
   return createClient(url, key, { auth: { persistSession: false }, global: { fetch } });
 }
 
-export async function upsertRetailer(supabase, retailer) {
-  const { data: existing, error: selectError } = await supabase
+/**
+ * The retailer queue for sync-retailers.mjs, sourced from the database
+ * instead of a file — `retailers` is the single source of truth (the
+ * manual pull-shopify-products.mjs flow already writes there directly,
+ * and discover-retailers.mjs adds pending rows there too). Only
+ * status='approved' rows are eligible to be synced.
+ */
+export async function getApprovedRetailers(supabase) {
+  const { data, error } = await supabase
     .from("retailers")
-    .select("id")
-    .eq("name", retailer.name)
-    .maybeSingle();
-  if (selectError) throw selectError;
-  if (existing) return existing.id;
+    .select(
+      "id, name, website_url, tall_section_url, country, clothing_type, tall_label_example, region, size_system, shipping_countries"
+    )
+    .eq("status", "approved")
+    .order("name");
+  if (error) throw error;
 
-  const { data: inserted, error: insertError } = await supabase
-    .from("retailers")
-    .insert({
-      name: retailer.name,
-      country: retailer.country,
-      clothing_type: retailer.type,
-      tall_label_example: retailer.label,
-      tall_section_url: retailer.sectionUrl || retailer.url,
-      website_url: retailer.url,
-      region: retailer.region,
-      size_system: retailer.sizeSystem,
-      shipping_countries: retailer.shipping,
-    })
-    .select("id")
-    .single();
-  if (insertError) throw insertError;
-  return inserted.id;
+  return (data ?? []).map((r) => {
+    // tall_section_url is the same as website_url for most retailers; when
+    // it differs and is a sub-path of it, that's the --path override a
+    // human supplied during onboarding (e.g. /collections/mens-tall-collection).
+    let path = "";
+    if (r.tall_section_url && r.tall_section_url !== r.website_url && r.tall_section_url.startsWith(r.website_url)) {
+      path = r.tall_section_url.slice(r.website_url.length);
+    }
+    return {
+      id: r.id,
+      name: r.name,
+      url: r.website_url,
+      path,
+      type: r.clothing_type,
+      label: r.tall_label_example,
+      region: r.region,
+      sizeSystem: r.size_system,
+      shipping: r.shipping_countries,
+    };
+  });
 }
 
 /**
@@ -157,6 +168,58 @@ export async function insertNewProducts(supabase, retailerId, candidates, curren
   }
 
   return { inserted: toInsert.length, alreadyKnown, deferred };
+}
+
+/** All known retailer website URLs, any status — used to dedupe discovery candidates. */
+export async function getKnownRetailerHostnames(supabase) {
+  const { data, error } = await supabase.from("retailers").select("website_url");
+  if (error) throw error;
+  return new Set(
+    (data ?? [])
+      .map((r) => {
+        try {
+          return new URL(r.website_url).hostname.replace(/^www\./, "");
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+  );
+}
+
+/** Hostnames discover-retailers.mjs already checked and rejected, so repeat runs don't re-spend search/network calls on them. */
+export async function getRejectedHostnames(supabase) {
+  const { data, error } = await supabase.from("retailer_discovery_attempts").select("hostname");
+  if (error) throw error;
+  return new Set((data ?? []).map((r) => r.hostname));
+}
+
+export async function recordRejectedAttempt(supabase, hostname, reason) {
+  const { error } = await supabase
+    .from("retailer_discovery_attempts")
+    .upsert({ hostname, result: "rejected", reason, checked_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+/**
+ * Inserts a newly-discovered candidate as status='pending' — it only
+ * becomes visible to the public site or eligible for sync-retailers.mjs
+ * once an admin approves it via /admin/retailers.
+ */
+export async function insertPendingRetailer(supabase, retailer) {
+  const { error } = await supabase.from("retailers").insert({
+    name: retailer.name,
+    country: retailer.country,
+    clothing_type: retailer.type,
+    tall_label_example: retailer.label,
+    tall_section_url: retailer.sectionUrl || retailer.url,
+    website_url: retailer.url,
+    region: retailer.region,
+    size_system: retailer.sizeSystem,
+    shipping_countries: retailer.shipping,
+    status: "pending",
+  });
+  if (error) throw error;
 }
 
 export async function logIngestionJob(supabase, { retailerId, sourceType, status, itemsIngested, errors }) {

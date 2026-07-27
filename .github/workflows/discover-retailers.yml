@@ -2,14 +2,11 @@ name: Discover new retailers
 
 on:
   schedule:
-    # First of every month at 03:00 UTC — discovery is less time-sensitive
-    # than the weekly product re-sync, and less frequent runs mean less
-    # SerpAPI usage/cost.
-    - cron: "0 3 1 * *"
+    # Every Monday at 02:00 UTC — an hour before the weekly product sync,
+    # so a retailer approved soon after this run can be picked up the same
+    # week (approval itself is still a manual click in /admin/retailers).
+    - cron: "0 2 * * 1"
   workflow_dispatch: {} # allows a manual "Run workflow" click for testing
-
-permissions:
-  contents: write # needed to commit the updated retailers.json back to the repo
 
 jobs:
   discover:
@@ -23,10 +20,5 @@ jobs:
       - run: node scripts/discover-retailers.mjs
         env:
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
-      - name: Commit any new/rejected retailers
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add scripts/retailers.json scripts/retailers-rejected.json
-          git diff --staged --quiet || git commit -m "Auto-discover: update retailer queue"
-          git push
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
