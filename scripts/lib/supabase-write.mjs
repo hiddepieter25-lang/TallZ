@@ -33,6 +33,20 @@ export function createServiceClient() {
     );
   }
 
+  // Same idea for the key — never log the key itself, but its shape/length
+  // alone catches the two most common paste mistakes (swapped secrets, or
+  // only part of the key selected when copying it from the "reveal" box).
+  if (key.startsWith("http")) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY looks like a URL — check the two secrets aren't swapped.");
+  }
+  if (key.length < 100) {
+    throw new Error(
+      `SUPABASE_SERVICE_ROLE_KEY looks too short (${key.length} characters) — a real Supabase service ` +
+        "role key is normally 200+ characters. You likely copied only part of it."
+    );
+  }
+
+  console.log(`Using Supabase host: ${new URL(url).hostname}`);
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
