@@ -6,12 +6,24 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * Supabase's own client already appends "/rest/v1" itself — if the pasted
+ * SUPABASE_URL secret is the REST endpoint shown elsewhere in the dashboard
+ * (already ending in /rest/v1) rather than the bare project URL, every
+ * request ends up as .../rest/v1/rest/v1/retailers, which genuinely doesn't
+ * exist (confirmed via Supabase's own API logs). Strip it defensively so
+ * either form works.
+ */
+export function normalizeSupabaseUrl(rawUrl) {
+  return rawUrl?.trim().replace(/\/rest\/v1\/?$/, "").replace(/\/$/, "");
+}
+
 export function createServiceClient() {
   // .trim() guards against a stray trailing newline/space in the secret
   // value (easy to introduce when copy-pasting into GitHub Actions secrets)
   // — that alone is enough to make every request fail with a cryptic
   // "Invalid path specified in request URL" error.
-  const url = process.env.SUPABASE_URL?.trim();
+  const url = normalizeSupabaseUrl(process.env.SUPABASE_URL);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) {
     throw new Error(
