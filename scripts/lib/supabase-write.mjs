@@ -7,8 +7,12 @@
 import { createClient } from "@supabase/supabase-js";
 
 export function createServiceClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // .trim() guards against a stray trailing newline/space in the secret
+  // value (easy to introduce when copy-pasting into GitHub Actions secrets)
+  // — that alone is enough to make every request fail with a cryptic
+  // "Invalid path specified in request URL" error.
+  const url = process.env.SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) {
     throw new Error(
       "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables — required for direct writes."
