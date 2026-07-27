@@ -76,6 +76,13 @@ async function main() {
     } catch (err) {
       hadFailure = true;
       console.error(`  FAILED: ${err.message}`);
+      // Supabase/Postgrest errors carry extra fields that err.message alone
+      // drops — print them too so a follow-up failure doesn't need another
+      // round of guessing.
+      for (const field of ["status", "code", "details", "hint"]) {
+        if (err[field]) console.error(`    ${field}: ${err[field]}`);
+      }
+      if (err.cause) console.error(`    cause: ${err.cause}`);
       // Best-effort job log — upsertRetailer itself may be what failed, in
       // which case there's no retailer_id to log against and the
       // console.error above (surfaced via non-zero exit in CI) is the record.

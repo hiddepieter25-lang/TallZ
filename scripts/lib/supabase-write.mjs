@@ -47,7 +47,11 @@ export function createServiceClient() {
   }
 
   console.log(`Using Supabase host: ${new URL(url).hostname}`);
-  return createClient(url, key, { auth: { persistSession: false } });
+  // Explicitly pin Node's own native fetch instead of letting supabase-js
+  // auto-pick an implementation — a known source of "Invalid path specified
+  // in request URL" errors that only show up on some Node/OS combinations
+  // (e.g. GitHub Actions' Ubuntu runner vs. a local Windows machine).
+  return createClient(url, key, { auth: { persistSession: false }, global: { fetch } });
 }
 
 export async function upsertRetailer(supabase, retailer) {
