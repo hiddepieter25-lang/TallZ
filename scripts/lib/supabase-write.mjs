@@ -1,0 +1,122 @@
+/**
+ * Direct Supabase writes for the unattended sync path (sync-retailers.mjs).
+ * The manual pull-shopify-products.mjs CLI is untouched and still prints SQL
+ * for a human to review — this module is only consumed by the new
+ * queue-driven job, which cannot rely on a human pasting SQL.
+ */
+import { createClient } from "@supabase/supabase-js";
+
+export function createServiceClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error(
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables — required for direct writes."
+    );
+  }
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
+export async function upsertRetailer(supabase, retailer) {
+  const { data: existing, error: selectError } = await supabase
+    .from("retailers")
+    .select("id")
+    .eq("name", retailer.name)
+    .maybeSingle();
+  if (selectError) throw selectError;
+  if (existing) return existing.id;
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("retailers")
+    .insert({
+      name: retailer.name,
+      country: retailer.country,
+      clothing_type: retailer.type,
+      tall_label_example: retailer.label,
+      tall_section_url: retailer.sectionUrl || retailer.url,
+      website_url: retailer.url,
+      region: retailer.region,
+      size_system: retailer.sizeSystem,
+      shipping_countries: retailer.shipping,
+    })
+    .select("id")
+    .single();
+  if (insertError) throw insertError;
+  return inserted.id;
+}
+
+/**
+ * Inserts only candidates whose product_url isn't already present for this
+ * retailer — never updates/overwrites an existing row, since a human may
+ * have already filled in color/material/pattern via /admin/catalog since
+ * the last sync and this must not clobber that. `maxNew` caps how many
+ * genuinely-new products get inserted in one run (applied *after* dedup, not
+ * before) so a first-time backlog can't flood in hundreds of unreviewed rows
+ * at once, while never causing a real incremental new arrival to be missed.
+ */
+export async function insertNewProducts(supabase, retailerId, candidates, currency, { maxNew = 20 } = {}) {
+  const { data: existingRows, error: existingError } = await supabase
+    .from("products")
+    .select("product_url")
+    .eq("retailer_id", retailerId);
+  if (existingError) throw existingError;
+
+  const existingUrls = new Set((existingRows ?? []).map((r) => r.product_url));
+  const fresh = candidates.filter((c) => c.productUrl && !existingUrls.has(c.productUrl));
+  const alreadyKnown = candidates.length - fresh.length;
+
+  const toInsert = fresh.slice(0, maxNew);
+  const deferred = fresh.length - toInsert.length;
+
+  if (toInsert.length === 0) return { inserted: 0, alreadyKnown, deferred };
+
+  const { data: insertedProducts, error: insertError } = await supabase
+    .from("products")
+    .insert(
+      toInsert.map((c) => ({
+        retailer_id: retailerId,
+        name: c.name,
+        category: c.category,
+        price_cents: c.priceCents,
+        currency,
+        style_tags: c.tags,
+        size_note: "Tall",
+        fit: c.fit,
+        gender: c.gender,
+        color: c.color,
+        material: c.material,
+        pattern: c.pattern,
+        product_url: c.productUrl,
+      }))
+    )
+    .select("id, product_url");
+  if (insertError) throw insertError;
+
+  const idByUrl = new Map(insertedProducts.map((p) => [p.product_url, p.id]));
+  const imageRows = toInsert
+    .filter((c) => c.imageUrl && idByUrl.has(c.productUrl))
+    .map((c) => ({
+      product_id: idByUrl.get(c.productUrl),
+      image_url: c.imageUrl,
+      is_model_shot: true,
+      sort_order: 0,
+    }));
+
+  if (imageRows.length > 0) {
+    const { error: imageError } = await supabase.from("product_images").insert(imageRows);
+    if (imageError) throw imageError;
+  }
+
+  return { inserted: toInsert.length, alreadyKnown, deferred };
+}
+
+export async function logIngestionJob(supabase, { retailerId, sourceType, status, itemsIngested, errors }) {
+  const { error } = await supabase.from("ingestion_jobs").insert({
+    retailer_id: retailerId,
+    source_type: sourceType,
+    status,
+    items_ingested: itemsIngested,
+    errors: errors || null,
+  });
+  if (error) throw error;
+}

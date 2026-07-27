@@ -1,4 +1,4 @@
-# Tall-Fit Marketplace
+# TALLZ
 
 A discovery-first marketplace aggregating clothing from external retailers for tall people. See [CLAUDEMODE.md](./CLAUDEMODE.md) for product scope and [CLAUDE.md](./CLAUDE.md) for working guidelines.
 

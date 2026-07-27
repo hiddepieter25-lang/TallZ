@@ -1,5 +1,5 @@
 {
-  "name": "tall-fit-marketplace",
+  "name": "tallz",
   "private": true,
   "workspaces": [
     "apps/*"

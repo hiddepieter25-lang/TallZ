@@ -28,15 +28,13 @@ Project scope for a shopping platform for tall people. Read this before making a
 - No "corporate" or "clinical" UI patterns.
 - Should feel like a fashion/lifestyle brand a user wants to open, not a tool they're forced to use.
 
-## 4. Core Feature: Discovery Over Search
+## 4. Core Feature: Search First, Personalized Feed as a Secondary Path
 
-**Search is not the primary flow. Feed-based inspiration is.**
+**Search is the primary flow. The quiz-driven feed is a secondary, opt-in path for users who want a personalized view.**
 
-- Build a discovery page that works like a social feed: an algorithm surfaces products/content based on the user's taste.
-- Users should feel inspired, not forced to type queries.
-- Think: shopping platform × social media, not shopping platform + search bar.
-
-The test: if a user's main way of finding something is typing into a search box, the core feature is broken.
+- The homepage leads with a large, unmissable search — filterable by inseam, sleeve, and torso length before anything else. See `apps/mobile/DESIGN.md`.
+- `/explore` and `/feed` (the swipe-onboarded personalized feed) still exist and are real, working discovery surfaces — they just aren't the homepage's main act anymore.
+- This reverses the earlier "discovery over search" direction from a previous iteration of this doc. Founder call, 2026-07-27: switch back to search-first.
 
 ## 5. Non-Goals
 
@@ -48,13 +46,19 @@ The test: if a user's main way of finding something is typing into a search box,
 
 ## 6. Open Decisions — Ask, Don't Assume
 
-**These are unresolved. Flag them before building anything that depends on them:**
+Research backing all of the below is in `MARKET_RESEARCH.md`. Items marked **RESOLVED** were explicit founder calls; items marked **PROPOSED** are the research-recommended default already reflected in the code, but haven't had an explicit sign-off — flag before assuming they're locked in for a real launch.
 
-- Tech stack: web, mobile, or both.
-- Product data sourcing: affiliate feeds, official APIs, scraping, or manual curation.
-- Recommendation algorithm: content-based, collaborative filtering, or hybrid — and what data is actually available to power it.
-- Monetization: affiliate commissions, ads, subscription, or a mix.
-- Definition of "tall people" scope: clothing length only, or also shoe size, fit metadata, etc.
+- **Tech stack — RESOLVED.** Web first (`apps/web`). Mobile (`apps/mobile`) not started.
+- **Definition of "tall people" scope — RESOLVED.** Full industry-standard tall market, not just 190cm+: ~183cm+ (6'0") men, ~173cm+ (5'8") women. Clothing length only for v1 — no shoe size or other fit metadata. See `MARKET_RESEARCH.md` intro + §2.1.
+- **Product data sourcing — PROPOSED.** Affiliate network feeds (CJ Affiliate, Rakuten Advertising, Awin) as primary, Shopify Storefront API for DTC brands not on a network, manual curation to fill gaps, scraping only as a last-resort fallback with per-retailer legal review. See `MARKET_RESEARCH.md` §4.3. **Blocked on affiliate program applications**, which need real business/tax/bank details only the founder can provide — not something that can be done from within Claude Code.
+- **Recommendation algorithm — PROPOSED.** Content-based, seeded by onboarding style-tag answers (already implemented in `apps/web`'s discovery feed). Collaborative filtering deferred until there's a real user base to generate interaction data.
+- **Monetization — RESOLVED.** Affiliate commission on outbound clicks first (already live in the schema, no traffic to sell ads against yet), plus paid ad placements/banners as a second revenue stream once there's real traffic. Subscription not planned.
+- **Is this a real business — RESOLVED.** Yes — founder intends to launch this as a real, revenue-generating business, not a personal/learning project. No fixed deadline. Treat scope/quality decisions accordingly: build it right rather than fast.
+- **Team — RESOLVED.** Solo founder working with Claude Code; no other humans on the project yet. No urgency on multi-user permissions/roles — a real login system is still needed before any "save your favorites" or admin features, per the open item below.
+- **Launch geography — RESOLVED.** Europe first, then UK and USA. This is about where TALLZ launches/markets to users — the retailer sourcing itself stays global (see `MARKET_RESEARCH.md` §3).
+- **Launch plan — RESOLVED.** Soft launch first (close friends + tall-size Discord/niche communities) for feedback, then a wider social-media push to grow the user base.
+- **Budget — RESOLVED.** No large budget. Up to ~$100/month if genuinely necessary, but default to free options as long as possible.
+- **Aesthetic — RESOLVED, see `apps/mobile/DESIGN.md`.** The founder replaced the earlier serif/rounded direction with a full, exact design system doc — treat that file as the living source of truth for colors, type, spacing, components, motion, and voice rather than re-describing it here (it changes independently of this doc and duplicating it would just drift out of sync). Summary: Swiss-poster aesthetic, black/paper/orange, Archivo + JetBrains Mono, hard 12-column grid, square corners everywhere, restrained 150ms motion. DESIGN.md's line that search is "the core of the product, on the homepage large and unmissable" is accurate again as of the 2026-07-27 search-first call in §4 above — no contradiction between the two docs anymore.
 
 ## 7. How to Work With Me
 
