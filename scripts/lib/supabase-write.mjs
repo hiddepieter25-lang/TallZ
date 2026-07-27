@@ -18,6 +18,21 @@ export function createServiceClient() {
       "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables — required for direct writes."
     );
   }
+
+  // Turns "every request fails with a cryptic PostgREST error" into an
+  // actionable message right away — the most common cause is the two
+  // secrets being pasted into the wrong fields (swapped), which silently
+  // makes `url` an unparseable JWT string instead of a URL.
+  try {
+    new URL(url);
+  } catch {
+    throw new Error(
+      `SUPABASE_URL doesn't look like a valid URL (starts with "${url.slice(0, 12)}..."). ` +
+        "Check the SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY secrets aren't swapped — " +
+        "SUPABASE_URL should look like https://xxxx.supabase.co, not start with 'eyJ'."
+    );
+  }
+
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
