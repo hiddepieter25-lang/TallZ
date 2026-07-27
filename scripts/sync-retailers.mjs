@@ -53,7 +53,30 @@ async function syncRetailer(supabase, retailer) {
   return { retailerId, inserted, alreadyKnown, deferred };
 }
 
+/**
+ * Bypasses supabase-js entirely and hits PostgREST directly, so we see the
+ * *actual* URL and raw response instead of whatever supabase-js reports —
+ * every previous fix targeted the client library, but PGRST125 is a real
+ * server response, so the bug has to be visible at this raw level.
+ */
+async function diagnoseConnection(url, key) {
+  const testUrl = `${url}/rest/v1/retailers?select=id&limit=1`;
+  console.log(`\nDiagnostic request: GET ${testUrl}`);
+  try {
+    const res = await fetch(testUrl, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    const text = await res.text();
+    console.log(`Diagnostic response: HTTP ${res.status}`);
+    console.log(`Diagnostic body: ${text.slice(0, 500)}`);
+  } catch (err) {
+    console.log(`Diagnostic request itself failed: ${err.message}`);
+  }
+}
+
 async function main() {
+  const url = process.env.SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  await diagnoseConnection(url, key);
+
   const supabase = createServiceClient();
   const retailers = JSON.parse(await readFile(QUEUE_FILE, "utf8"));
 
