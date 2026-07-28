@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { currencySymbol, type Product } from "@/lib/products";
 import { ProductSwatch } from "@/components/ProductSwatch";
 import { trackProductEvent, type Placement } from "@/lib/track";
+import { useImpressionTracking } from "@/lib/useImpressionTracking";
 
 export interface MasonryItem {
   product: Product;
@@ -16,6 +17,8 @@ function MasonryCard({ item, placement }: { item: MasonryItem; placement: Placem
   const { product, width, height } = item;
   const [saved, setSaved] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  useImpressionTracking(cardRef, product.id, product.retailerId, placement);
 
   const toggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -30,7 +33,7 @@ function MasonryCard({ item, placement }: { item: MasonryItem; placement: Placem
   };
 
   const card = (
-    <div className="mb-6 break-inside-avoid bg-white">
+    <div ref={cardRef} className="mb-6 break-inside-avoid bg-white">
       <div className="group relative overflow-hidden">
         {product.imageUrl ? (
           <Image

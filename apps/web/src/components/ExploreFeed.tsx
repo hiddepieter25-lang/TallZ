@@ -5,10 +5,13 @@ import { currencySymbol, type Product } from "@/lib/products";
 import { ProductSwatch } from "@/components/ProductSwatch";
 import { buttonClasses } from "@/components/Button";
 import { trackProductEvent } from "@/lib/track";
-import { useState } from "react";
+import { useImpressionTracking } from "@/lib/useImpressionTracking";
+import { useRef, useState } from "react";
 
 function ExploreCard({ product }: { product: Product }) {
   const [decision, setDecision] = useState<"liked" | "skipped" | null>(null);
+  const cardRef = useRef<HTMLElement>(null);
+  useImpressionTracking(cardRef, product.id, product.retailerId, "explore");
 
   const decide = (kind: "liked" | "skipped") => {
     setDecision(kind);
@@ -21,7 +24,10 @@ function ExploreCard({ product }: { product: Product }) {
   };
 
   return (
-    <section className="flex h-[calc(100dvh-77px)] w-full shrink-0 snap-start snap-always items-center justify-center bg-line/50 py-4">
+    <section
+      ref={cardRef}
+      className="flex h-[calc(100dvh-77px)] w-full shrink-0 snap-start snap-always items-center justify-center bg-line/50 py-4"
+    >
       <div className="relative aspect-[9/16] h-full max-h-full max-w-full overflow-hidden bg-black">
         {product.imageUrl ? (
           <Image

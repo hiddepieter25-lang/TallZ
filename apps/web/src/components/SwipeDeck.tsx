@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { Product, StyleTag } from "@/lib/products";
 import { ProductSwatch } from "@/components/ProductSwatch";
+import { trackProductEvent } from "@/lib/track";
 
 /**
  * A like/skip card deck over real catalog products (not stock photos) —
@@ -35,6 +36,12 @@ export function SwipeDeck({
       setLikedTags(nextTags);
       setLikedCount((c) => c + 1);
     }
+    trackProductEvent({
+      productId: current.id,
+      retailerId: current.retailerId,
+      signalType: liked ? "save" : "ignore",
+      placement: "onboarding_swipe",
+    });
     const nextIndex = index + 1;
     setIndex(nextIndex);
     if (nextIndex >= products.length) {

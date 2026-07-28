@@ -70,12 +70,14 @@ export default function Privacy() {
           <h2 className="text-base font-semibold">Cookies &amp; consent-based tracking</h2>
           <p className="mt-2 text-muted">
             When you first visit, we ask whether you&apos;re okay with us
-            logging which products you click through to (so we can improve
-            recommendations over time). If you choose &quot;Essential
-            only,&quot; outbound links still work exactly the same — we just
-            don&apos;t log the click. You can change this choice any time by
-            clearing your browser&apos;s local storage for this site. We
-            don&apos;t use third-party advertising cookies.
+            logging which products you view (and for roughly how long),
+            which you click through to, save, or skip — including during
+            the onboarding quiz — so we can improve recommendations over
+            time. If you choose &quot;Essential only,&quot; outbound links
+            still work exactly the same — we just don&apos;t log any of
+            this. You can change this choice any time by clearing your
+            browser&apos;s local storage for this site. We don&apos;t use
+            third-party advertising cookies.
           </p>
         </section>
 
@@ -91,7 +93,8 @@ export default function Privacy() {
           <h2 className="text-base font-semibold">Your choices &amp; deleting your data</h2>
           <p className="mt-2 text-muted">
             If you have an account, you can permanently delete your quiz
-            answers, photo reference, and click history at any time from{" "}
+            answers, photo reference, and view/click/save history at any
+            time from{" "}
             <span className="italic">Account → Delete my data</span>. If you
             used the app without an account and want a specific quiz
             submission removed, contact us using the details below and

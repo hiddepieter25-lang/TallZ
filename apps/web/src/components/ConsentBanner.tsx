@@ -28,7 +28,8 @@ export function ConsentBanner() {
       <div className="mx-auto flex max-w-[1440px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-2xl text-xs leading-relaxed text-muted">
           We use your quiz answers (including height) to personalize your feed, and — only if you
-          allow it — log which products you click through to so we can improve recommendations.
+          allow it — log which products you view, how long, and which you click, save, or skip
+          so we can improve recommendations.
           See our{" "}
           <Link href="/privacy" className="text-foreground underline">
             Privacy Policy
@@ -44,7 +45,7 @@ export function ConsentBanner() {
                 checked={analyticsOn}
                 onChange={(e) => setAnalyticsOn(e.target.checked)}
               />
-              Analytics (click tracking)
+              Analytics (view &amp; click tracking)
             </label>
             <button
               onClick={() => choose(analyticsOn ? "all" : "essential")}
