@@ -25,6 +25,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/analytics" className="hover:text-orange">
             Analytics
           </Link>
+          <Link href="/admin/algorithm" className="hover:text-orange">
+            Algorithm
+          </Link>
         </nav>
         <form action={adminLogoutAction} className="ml-auto">
           <button type="submit" className="font-mono text-xs uppercase tracking-[0.1em] text-muted hover:text-foreground">
