@@ -10,19 +10,22 @@ This supersedes the earlier "Swiss design poster" direction (hard corners, mono 
 
 ## Colors
 
+Pure monochrome — founder call, 2026-07-30, reversing the brief warm/cobalt period. No color accent at all.
+
 ```css
---background: #F5EDE7; /* --paper — warm blush-white, NOT stark white */
---foreground: #1A1613; /* --ink — text, fills */
---card:       #FBF7F3; /* photo backdrops, panels sitting on paper — barely lighter than paper, never pure white */
---muted:      #8B7F74; /* meta text, secondary copy */
---line:       #1A16131A; /* hairline borders, ~10% ink */
---accent:     #3348FF; /* the one accent — electric cobalt, replaces the old orange */
+--background: #FFFFFF; /* pure white — no warm tint */
+--foreground: #000000; /* pure black */
+--card:       #FFFFFF; /* same as background — no separate tint */
+--muted:      #737373; /* neutral grey, no color cast */
+--line:       #0000001F; /* hairline borders, ~12% black */
+--accent:     #000000; /* no color accent — black (or white, on a black surface) only */
 ```
 
 Rules:
 
-- One accent only, still. It changed from orange to cobalt — don't reintroduce orange, don't add a second accent alongside cobalt.
-- `--card` exists specifically so product photography and panels never sit on pure white — everything warm, nothing stark.
+- No color anywhere. Not cobalt, not orange, not a "warm neutral" — black, white, and grey only.
+- `--card` is intentionally identical to `--background` now — product photography provides the visual interest, panels don't need their own tint.
+- Where something needs to stand out (a CTA, a badge), use solid black on white or solid white on black — contrast does the work color used to.
 
 ## Typography
 
@@ -72,15 +75,15 @@ Fixed section order — implemented in `apps/web/src/app/page.tsx`:
 
 ## Components
 
-**Buttons** — rounded pill (`border-radius: 9999px`). Primary is solid cobalt with warm-white text. Secondary is a 1px ink outline on transparent. Height 48px, uppercase label (regular sans, not mono), 24px horizontal padding. Hover inverts fill and text; no scale, no shadow.
+**Buttons** — rounded pill (`border-radius: 9999px`). Primary is solid black with white text. Secondary is a 1px black outline on transparent. Height 48px, uppercase label (regular sans, not mono), 24px horizontal padding. Hover inverts fill and text; no scale, no shadow.
 
 **Product cards** — `--card` surface, rounded corners (`~16px`), no border. Image on top at 3:4 portrait with a rounded save-heart button overlaid top-right and a small rounded "fit" badge overlaid bottom-left (e.g. "36\" inseam", "Tall fit ✓"). Below: brand in uppercase caps 10–11px, product name 12–16px regular, price in bold sans (a struck-through "was" price next to a discounted price is encouraged — this is a shopping feed, show the deal). Hover raises image contrast slightly; nothing moves.
 
-**Filters** — presented as rounded pill chips in a horizontally-scrollable row, active state filled cobalt. Tall-specific measurements (inseam, sleeve, height range) stay the primary filter.
+**Filters** — presented as rounded pill chips in a horizontally-scrollable row, active state filled black. Tall-specific measurements (inseam, sleeve, height range) stay the primary filter.
 
-**Nav** — thin, fixed, transparent over paper. Logo left, links regular sans (not mono caps), search right. A 1px rule under it. It does not shrink or animate on scroll.
+**Nav** — thin, fixed, transparent over white. Logo left, links regular sans (not mono caps), search right. A 1px rule under it. It does not shrink or animate on scroll.
 
-**Search** — rounded input, 1px ink border, regular-sans placeholder. Still the core entry point; on the homepage it stays large and unmissable.
+**Search** — rounded input, 1px black border, regular-sans placeholder. Still the core entry point; on the homepage it stays large and unmissable.
 
 ## Motion
 
@@ -114,9 +117,7 @@ Open question, not yet resolved — the founder is considering a new name/logo b
 
 ## Don't
 
-- Stark high-contrast black-and-white editorial photography as the primary mood
-- Orange as an accent, or a second accent color alongside cobalt
+- Any color accent — no orange, no cobalt, nothing. Black, white, grey only.
 - A separate mono/monospace typeface for labels — one family only
-- Pure white `#FFFFFF` as a background or card surface
 - Centered layouts or centered body text
 - Animation that draws attention to itself beyond the one hero entrance
