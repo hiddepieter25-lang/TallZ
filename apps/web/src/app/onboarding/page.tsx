@@ -266,7 +266,7 @@ export default function Onboarding() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-6 py-20 sm:px-0">
-      <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-orange">
+      <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-accent">
         {step + 1} / {steps.length}
       </p>
       <h1 className="mb-8 text-3xl font-bold tracking-tight">
@@ -287,7 +287,7 @@ export default function Onboarding() {
         <button
           onClick={() => (isLast ? finish() : setStep((s) => s + 1))}
           disabled={!current.canContinue || submitting}
-          className="ml-auto h-12 border border-orange bg-orange px-8 font-mono text-xs font-medium uppercase tracking-[0.12em] text-white transition-colors duration-150 ease-out hover:bg-background hover:text-orange disabled:opacity-40"
+          className="ml-auto h-12 border border-accent bg-accent px-8 font-mono text-xs font-medium uppercase tracking-[0.12em] text-white transition-colors duration-150 ease-out hover:bg-background hover:text-accent disabled:opacity-40"
         >
           {isLast ? (submitting ? "Saving…" : "See my feed") : "Continue"}
         </button>

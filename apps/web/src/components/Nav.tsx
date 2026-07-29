@@ -20,12 +20,12 @@ export async function Nav() {
         <nav className="flex items-center gap-6 font-mono text-xs font-medium uppercase tracking-[0.12em]">
           <NavLinks loggedIn={!!user} initial={initial} />
         </nav>
-        <form action="/search" method="get" className="hidden shrink-0 items-center border border-foreground md:flex">
+        <form action="/search" method="get" className="hidden shrink-0 items-center rounded-full border border-foreground md:flex">
           <input
             name="q"
             type="text"
             placeholder="search"
-            className="h-9 w-40 bg-transparent px-3 font-mono text-xs placeholder:text-muted focus:outline-none lg:w-56"
+            className="h-9 w-40 rounded-full bg-transparent px-4 font-mono text-xs placeholder:text-muted focus:outline-none lg:w-56"
           />
         </form>
       </div>

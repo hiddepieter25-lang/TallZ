@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f2f0ec; /* --paper — warm off-white, never pure white as page bg */
-  --foreground: #0a0a0a; /* --black — text, ink, fills */
-  --line: #0a0a0a1a; /* --rule — hairline borders, ~10% black */
-  --muted: rgb(10 10 10 / 60%); /* meta text — black at 60% */
-  --orange: #ff3d00; /* the one accent — always full saturation, never tinted */
+  --background: #f5ede7; /* --paper — warm blush-white, never stark white */
+  --foreground: #1a1613; /* --ink — text, fills */
+  --line: #1a16131a; /* hairline borders, ~10% ink */
+  --muted: #8b7f74; /* meta text */
+  --card: #fbf7f3; /* photo backdrops / panels — barely lighter than paper, never pure white */
+  --accent: #3348ff; /* the one accent — electric cobalt, replaces the old orange */
 }
 
 @theme inline {
@@ -13,10 +14,10 @@
   --color-foreground: var(--foreground);
   --color-line: var(--line);
   --color-muted: var(--muted);
-  --color-orange: var(--orange);
+  --color-card: var(--card);
+  --color-accent: var(--accent);
   --font-sans: var(--font-display);
-  --font-mono: var(--font-mono);
-  --radius-none: 0px;
+  --font-mono: var(--font-display); /* one type family now — labels/prices use the same sans as everything else */
 }
 
 body {

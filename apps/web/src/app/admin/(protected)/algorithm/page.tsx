@@ -7,7 +7,7 @@ function Bar({ label, count, max, suffix = "" }: { label: string; count: number;
     <div className="flex items-center gap-3 text-sm">
       <span className="w-32 shrink-0 truncate font-mono text-xs uppercase tracking-[0.08em]">{label}</span>
       <div className="h-2 flex-1 bg-line">
-        <div className="h-2 bg-orange" style={{ width: `${pct}%` }} />
+        <div className="h-2 bg-accent" style={{ width: `${pct}%` }} />
       </div>
       <span className="w-16 shrink-0 text-right font-mono text-xs text-muted">
         {count.toLocaleString()}
@@ -84,7 +84,7 @@ export default async function AdminAlgorithm() {
       {error && <p className="text-sm text-red-600">Failed to load: {error.message}</p>}
 
       <section>
-        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-orange">
+        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-accent">
           01 / how ranking works today
         </h3>
         <div className="overflow-x-auto border border-line">
@@ -101,7 +101,7 @@ export default async function AdminAlgorithm() {
                 <tr key={rule.label} className="border-b border-line last:border-0">
                   <td className="px-4 py-3 font-medium">{rule.label}</td>
                   <td className="px-4 py-3 text-muted">{rule.detail}</td>
-                  <td className="px-4 py-3 text-right text-orange">{rule.weight}</td>
+                  <td className="px-4 py-3 text-right text-accent">{rule.weight}</td>
                 </tr>
               ))}
             </tbody>
@@ -114,7 +114,7 @@ export default async function AdminAlgorithm() {
       </section>
 
       <section>
-        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-orange">
+        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-accent">
           02 / engagement, all-time
         </h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -126,7 +126,7 @@ export default async function AdminAlgorithm() {
       </section>
 
       <section>
-        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-orange">
+        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-accent">
           03 / signals by type
         </h3>
         <div className="space-y-2">
@@ -138,7 +138,7 @@ export default async function AdminAlgorithm() {
       </section>
 
       <section>
-        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-orange">
+        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-accent">
           04 / signals by placement
         </h3>
         <div className="space-y-2">
@@ -150,7 +150,7 @@ export default async function AdminAlgorithm() {
       </section>
 
       <section>
-        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-orange">
+        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-accent">
           05 / average dwell time by placement
         </h3>
         <div className="space-y-2">
@@ -164,7 +164,7 @@ export default async function AdminAlgorithm() {
       </section>
 
       <section>
-        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-orange">
+        <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.1em] text-accent">
           06 / style taste signal (from saved products)
         </h3>
         <div className="space-y-2">

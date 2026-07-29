@@ -56,7 +56,7 @@ export function ConsentBanner() {
           </div>
         ) : (
           <div className="flex shrink-0 items-center gap-3 font-mono text-xs uppercase tracking-[0.1em]">
-            <button onClick={() => setCustomizing(true)} className="text-muted hover:text-orange">
+            <button onClick={() => setCustomizing(true)} className="text-muted hover:text-accent">
               Customize
             </button>
             <button
@@ -67,7 +67,7 @@ export function ConsentBanner() {
             </button>
             <button
               onClick={() => choose("all")}
-              className="h-10 border border-orange bg-orange px-5 text-white transition-colors duration-150 ease-out hover:bg-background hover:text-orange"
+              className="h-10 border border-accent bg-accent px-5 text-white transition-colors duration-150 ease-out hover:bg-background hover:text-accent"
             >
               Accept all
             </button>

@@ -24,7 +24,7 @@ export default async function Account() {
       <ChangePasswordForm />
 
       <div className="mt-10 flex flex-col gap-3 border-t border-line pt-6 font-mono text-xs uppercase tracking-[0.1em]">
-        <Link href="/admin" className="hover:text-orange">
+        <Link href="/admin" className="hover:text-accent">
           Admin dashboard
         </Link>
         <Link href="/account/delete" className="text-red-600 hover:text-red-800">

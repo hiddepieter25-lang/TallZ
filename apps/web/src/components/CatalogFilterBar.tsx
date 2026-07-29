@@ -33,7 +33,7 @@ export function CatalogFilterBar({
   return (
     <form
       method="get"
-      className="mb-8 flex flex-wrap items-end gap-6 border border-line px-5 py-4 font-mono text-xs"
+      className="mb-8 flex flex-wrap items-end gap-6 rounded-2xl border border-line px-5 py-4 font-mono text-xs"
     >
       {Object.entries(preserveParams).map(
         ([key, value]) =>
@@ -46,7 +46,7 @@ export function CatalogFilterBar({
           <select
             name="category"
             defaultValue={selectedCategory ?? ""}
-            className="border border-foreground bg-transparent px-2 py-1.5"
+            className="rounded-lg border border-foreground bg-transparent px-2 py-1.5"
           >
             <option value="">All</option>
             {categories.map((c) => (
@@ -64,7 +64,7 @@ export function CatalogFilterBar({
           <select
             name="color"
             defaultValue={selectedColor ?? ""}
-            className="border border-foreground bg-transparent px-2 py-1.5"
+            className="rounded-lg border border-foreground bg-transparent px-2 py-1.5"
           >
             <option value="">All</option>
             {colors.map((c) => (
@@ -82,7 +82,7 @@ export function CatalogFilterBar({
           <select
             name="material"
             defaultValue={selectedMaterial ?? ""}
-            className="border border-foreground bg-transparent px-2 py-1.5"
+            className="rounded-lg border border-foreground bg-transparent px-2 py-1.5"
           >
             <option value="">All</option>
             {materials.map((m) => (
@@ -99,7 +99,7 @@ export function CatalogFilterBar({
         <div className="flex gap-2">
           <label className="cursor-pointer">
             <input type="radio" name="gender" value="" defaultChecked={!selectedGender} className="peer sr-only" />
-            <span className="border border-foreground px-3 py-1.5 uppercase tracking-[0.08em] peer-checked:bg-foreground peer-checked:text-background">
+            <span className="rounded-full border border-foreground px-3 py-1.5 uppercase tracking-[0.08em] peer-checked:bg-foreground peer-checked:text-background">
               All
             </span>
           </label>
@@ -112,7 +112,7 @@ export function CatalogFilterBar({
                 defaultChecked={selectedGender === g}
                 className="peer sr-only"
               />
-              <span className="border border-foreground px-3 py-1.5 uppercase tracking-[0.08em] peer-checked:bg-foreground peer-checked:text-background">
+              <span className="rounded-full border border-foreground px-3 py-1.5 uppercase tracking-[0.08em] peer-checked:bg-foreground peer-checked:text-background">
                 {g}
               </span>
             </label>
@@ -123,7 +123,7 @@ export function CatalogFilterBar({
       <label className="flex cursor-pointer flex-col gap-1.5">
         <span className="font-medium uppercase tracking-[0.12em] text-muted">Region</span>
         <input type="checkbox" name="eu" value="1" defaultChecked={euOnly} className="peer sr-only" />
-        <span className="border border-foreground px-3 py-1.5 uppercase tracking-[0.08em] peer-checked:bg-foreground peer-checked:text-background">
+        <span className="rounded-full border border-foreground px-3 py-1.5 uppercase tracking-[0.08em] peer-checked:bg-foreground peer-checked:text-background">
           EU retailers only
         </span>
       </label>
@@ -135,7 +135,7 @@ export function CatalogFilterBar({
           name="minInseam"
           defaultValue={minInseam}
           placeholder="any"
-          className="w-20 border border-foreground bg-transparent px-2 py-1.5"
+          className="w-20 rounded-lg border border-foreground bg-transparent px-2 py-1.5"
         />
       </label>
 
@@ -146,13 +146,13 @@ export function CatalogFilterBar({
           name="minSleeve"
           defaultValue={minSleeve}
           placeholder="any"
-          className="w-20 border border-foreground bg-transparent px-2 py-1.5"
+          className="w-20 rounded-lg border border-foreground bg-transparent px-2 py-1.5"
         />
       </label>
 
       <button
         type="submit"
-        className="ml-auto h-9 border border-orange bg-orange px-6 font-medium uppercase tracking-[0.12em] text-white transition-colors duration-150 ease-out hover:bg-background hover:text-orange"
+        className="ml-auto h-9 rounded-full border border-accent bg-accent px-6 font-medium uppercase tracking-[0.12em] text-white transition-colors duration-150 ease-out hover:bg-background hover:text-accent"
       >
         Apply
       </button>

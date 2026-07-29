@@ -58,7 +58,7 @@ export default async function AdminRetailers() {
                   <tr key={r.id} className="border-b border-line">
                     <td className="py-3 pr-3 font-medium">{r.name}</td>
                     <td className="py-3 pr-3">
-                      <a href={r.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-orange">
+                      <a href={r.website_url} target="_blank" rel="noopener noreferrer" className="hover:text-accent">
                         {r.website_url}
                       </a>
                     </td>
@@ -71,7 +71,7 @@ export default async function AdminRetailers() {
                           <input type="hidden" name="id" value={r.id} />
                           <button
                             type="submit"
-                            className="border border-orange bg-orange px-3 py-1 uppercase tracking-[0.1em] text-white transition-colors duration-150 ease-out hover:bg-background hover:text-orange"
+                            className="border border-accent bg-accent px-3 py-1 uppercase tracking-[0.1em] text-white transition-colors duration-150 ease-out hover:bg-background hover:text-accent"
                           >
                             Approve
                           </button>

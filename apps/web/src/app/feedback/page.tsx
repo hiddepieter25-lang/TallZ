@@ -34,7 +34,7 @@ export default function Feedback() {
       <form action={formAction} className="flex flex-col gap-4">
         <select
           name="feedback_type"
-          className="h-12 border border-foreground bg-transparent px-4 text-sm outline-none focus:border-orange"
+          className="h-12 border border-foreground bg-transparent px-4 text-sm outline-none focus:border-accent"
         >
           {TYPES.map((t) => (
             <option key={t.id} value={t.id}>
@@ -47,7 +47,7 @@ export default function Feedback() {
           required
           rows={5}
           placeholder="What's on your mind?"
-          className="border border-foreground bg-transparent px-4 py-3 text-sm outline-none focus:border-orange"
+          className="border border-foreground bg-transparent px-4 py-3 text-sm outline-none focus:border-accent"
         />
 
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}

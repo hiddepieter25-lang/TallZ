@@ -7,7 +7,7 @@ function Bar({ label, count, max }: { label: string; count: number; max: number 
     <div className="flex items-center gap-3 text-sm">
       <span className="w-40 shrink-0 truncate">{label}</span>
       <div className="h-2 flex-1 bg-line">
-        <div className="h-2 bg-orange" style={{ width: `${pct}%` }} />
+        <div className="h-2 bg-accent" style={{ width: `${pct}%` }} />
       </div>
       <span className="w-8 shrink-0 text-right font-mono text-xs text-muted">{count}</span>
     </div>
@@ -71,7 +71,7 @@ export default async function AdminAnalytics() {
           {dailyCounts.map((c, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-1">
               <div
-                className="w-full bg-orange"
+                className="w-full bg-accent"
                 style={{ height: `${Math.max(2, (c / maxDaily) * 100)}%` }}
                 title={`${days[i]}: ${c}`}
               />

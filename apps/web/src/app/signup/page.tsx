@@ -54,7 +54,7 @@ function Signup() {
 
       <p className="mt-6 font-mono text-xs uppercase tracking-[0.1em] text-muted">
         Already have an account?{" "}
-        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="text-foreground hover:text-orange">
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="text-foreground hover:text-accent">
           Log in
         </Link>
       </p>

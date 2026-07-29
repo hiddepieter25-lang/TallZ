@@ -33,7 +33,7 @@ function MasonryCard({ item, placement }: { item: MasonryItem; placement: Placem
   };
 
   const card = (
-    <div ref={cardRef} className="mb-6 break-inside-avoid bg-white">
+    <div ref={cardRef} className="mb-6 break-inside-avoid overflow-hidden rounded-2xl bg-card">
       <div className="group relative overflow-hidden">
         {product.imageUrl ? (
           <Image
@@ -53,8 +53,8 @@ function MasonryCard({ item, placement }: { item: MasonryItem; placement: Placem
         <button
           aria-label={saved ? "Unsave" : "Save"}
           onClick={toggleSave}
-          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center border font-mono text-sm transition-colors duration-150 ease-out ${
-            saved ? "border-orange bg-orange text-white" : "border-foreground bg-background text-foreground hover:bg-foreground hover:text-background"
+          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors duration-150 ease-out ${
+            saved ? "bg-accent text-white" : "bg-card/90 text-foreground hover:bg-foreground hover:text-background"
           }`}
         >
           ♥

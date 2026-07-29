@@ -29,7 +29,7 @@ export default async function Search({
 
   return (
     <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-14 sm:px-8">
-      <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-orange">Search</p>
+      <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-accent">Search</p>
       <h1 className="mb-10 text-3xl font-bold tracking-tight">
         {query ? `"${q}"` : "search the catalog"}
       </h1>

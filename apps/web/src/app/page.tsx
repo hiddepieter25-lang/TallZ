@@ -14,7 +14,7 @@ const INSEAM_CHIPS = [
 ];
 
 const chipClasses =
-  "inline-flex h-10 items-center border border-foreground px-4 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-150 ease-out hover:bg-foreground hover:text-background";
+  "inline-flex h-10 items-center rounded-full border border-foreground px-4 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-150 ease-out hover:bg-foreground hover:text-background";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -35,39 +35,52 @@ export default async function Home() {
     <div className="flex flex-1 flex-col">
       {/* Hero — 01 / index */}
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-6 px-4 pb-20 pt-16 sm:px-8 sm:pt-24">
-        <div className="col-span-12 lg:col-span-6">
+        <div className="col-span-12 flex flex-col justify-center lg:col-span-6">
           <p className="font-mono text-xs uppercase tracking-[0.12em] text-muted">
-            01 / index — for women 173cm+ / men 183cm+
+            for women 173cm+ / men 183cm+
           </p>
           <h1
             className="mt-6 font-bold"
             style={{
-              fontSize: "clamp(64px, 11vw, 180px)",
-              lineHeight: 0.88,
-              letterSpacing: "-0.04em",
+              fontSize: "clamp(48px, 8vw, 108px)",
+              lineHeight: 0.95,
+              letterSpacing: "-0.02em",
             }}
           >
-            Clothes
+            Your closet.
             <br />
-            that end
+            One tap
             <br />
-            where you
-            <br />
-            do.
+            from yours.
           </h1>
-          <p className="mt-10 max-w-[65ch] text-base leading-relaxed">
-            Every tall-fit garment from {retailers.length} retailers, in one search. Filter by
-            inseam, sleeve and torso length before you filter by anything else.
+          <p className="mt-8 max-w-[52ch] text-base leading-relaxed text-muted">
+            Affordable tall-fit finds from {retailers.length} retailers, curated like a feed you'd
+            actually want to scroll. Search, filter by inseam and sleeve, tap through, and check
+            out on the seller's own site — TallZ just makes the match.
           </p>
         </div>
         <figure className="col-span-12 mt-12 lg:col-span-5 lg:col-start-8 lg:mt-0">
-          <div className="flex aspect-[3/4] items-end bg-foreground p-6">
-            <p className="font-mono text-xs uppercase tracking-[0.12em] text-background">
-              Editorial 01 — full silhouette
-            </p>
+          <div
+            className="relative flex aspect-[3/4] items-end overflow-hidden rounded-3xl p-6"
+            style={{
+              background:
+                "radial-gradient(120% 90% at 20% 10%, rgba(255,255,255,0.22), transparent 55%), linear-gradient(160deg, #C9603B 0%, #8E3A2A 55%, #4A2018 100%)",
+            }}
+          >
+            <span className="absolute left-6 top-6 rounded-full bg-card/90 px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-foreground">
+              Algorithm pick
+            </span>
+            <h2
+              className="font-bold uppercase text-card"
+              style={{ fontSize: "clamp(28px, 3.2vw, 40px)", lineHeight: 0.95, letterSpacing: "-0.01em" }}
+            >
+              New drops,
+              <br />
+              your length.
+            </h2>
           </div>
           <figcaption className="mt-3 font-mono text-xs text-muted">
-            Hero image slot — high-contrast b/w, full body, 3:4
+            Curated for your height — updated as you scroll
           </figcaption>
         </figure>
       </section>
@@ -76,16 +89,16 @@ export default async function Home() {
       <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8 sm:py-32" id="search">
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8">
-            <p className="font-mono text-xs uppercase tracking-[0.12em] text-muted">02 / search</p>
-            <form action="/search" method="get" className="mt-6 flex">
+            <p className="font-mono text-xs uppercase tracking-[0.12em] text-muted">find your fit</p>
+            <form action="/search" method="get" className="mt-6 flex overflow-hidden rounded-full border border-foreground">
               <input
                 name="q"
                 type="search"
                 placeholder="Trousers, 36 inseam, black"
                 aria-label="Search tall clothing"
-                className={`${inputClasses} flex-1 border-r-0`}
+                className={`${inputClasses} flex-1 rounded-none border-0`}
               />
-              <button type="submit" className={buttonClasses.primary}>
+              <button type="submit" className="rounded-none border-0 bg-accent px-8 font-mono text-xs font-medium uppercase tracking-[0.12em] text-white transition-colors duration-150 ease-out hover:opacity-85">
                 Search
               </button>
             </form>
@@ -101,17 +114,17 @@ export default async function Home() {
       </section>
 
       {/* Statement — the one full-bleed block per DESIGN.md */}
-      <section className="bg-orange py-24 text-white">
+      <section className="bg-foreground py-24 text-background">
         <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-6 px-4 sm:px-8">
           <div className="col-span-12 lg:col-span-9">
-            <p className="font-mono text-xs uppercase tracking-[0.12em] text-white/75">
-              03 / the problem
+            <p className="font-mono text-xs uppercase tracking-[0.12em] text-background/60">
+              the fit problem
             </p>
             <h2
               className="mt-4 font-bold"
-              style={{ fontSize: "clamp(32px, 5vw, 72px)", lineHeight: 0.95, letterSpacing: "-0.03em" }}
+              style={{ fontSize: "clamp(28px, 4.5vw, 60px)", lineHeight: 1.05, letterSpacing: "-0.02em" }}
             >
-              Standard sizing stops at 34. Most of us don&apos;t.
+              Cheap fashion shouldn&apos;t mean settling for a hem that stops an inch too soon.
             </h2>
           </div>
         </div>
@@ -121,10 +134,10 @@ export default async function Home() {
       <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8 sm:py-32" id="new">
         <div className="flex items-end justify-between border-b border-line pb-5">
           <div>
-            <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-orange">04 / new in tall</p>
-            <h2 className="text-3xl font-bold tracking-tight">New in tall</h2>
+            <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-accent">new in tall</p>
+            <h2 className="text-3xl font-bold tracking-tight">This week's edit</h2>
           </div>
-          <Link href="/explore" className="font-mono text-xs uppercase tracking-[0.12em] hover:text-orange">
+          <Link href="/explore" className="font-mono text-xs uppercase tracking-[0.12em] hover:text-accent">
             View all
           </Link>
         </div>
@@ -139,7 +152,7 @@ export default async function Home() {
       <section className="border-t border-line px-4 py-20 sm:px-8 sm:py-28">
         <div className="mx-auto grid max-w-[1440px] grid-cols-12 items-center gap-6">
           <div className="col-span-12 lg:col-span-8">
-            <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-orange">05 / quiz</p>
+            <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-accent">build your closet</p>
             <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">
               answer a few questions.
               <br />

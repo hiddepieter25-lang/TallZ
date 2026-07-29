@@ -80,8 +80,8 @@ function ExploreCard({ product }: { product: Product }) {
             <button
               aria-label="Skip"
               onClick={() => decide("skipped")}
-              className={`flex h-11 w-11 items-center justify-center border font-mono text-lg transition-colors duration-150 ease-out ${
-                decision === "skipped" ? "border-white bg-white text-black" : "border-white/40 text-white hover:border-white"
+              className={`flex h-11 w-11 items-center justify-center rounded-full border font-mono text-lg transition-colors duration-150 ease-out ${
+                decision === "skipped" ? "border-card bg-card text-black" : "border-white/40 text-white hover:border-white"
               }`}
             >
               ✕
@@ -89,8 +89,8 @@ function ExploreCard({ product }: { product: Product }) {
             <button
               aria-label="Like"
               onClick={() => decide("liked")}
-              className={`flex h-11 w-11 items-center justify-center border font-mono text-lg transition-colors duration-150 ease-out ${
-                decision === "liked" ? "border-orange bg-orange text-white" : "border-white/40 text-white hover:border-white"
+              className={`flex h-11 w-11 items-center justify-center rounded-full border font-mono text-lg transition-colors duration-150 ease-out ${
+                decision === "liked" ? "border-accent bg-accent text-white" : "border-white/40 text-white hover:border-white"
               }`}
             >
               ♥

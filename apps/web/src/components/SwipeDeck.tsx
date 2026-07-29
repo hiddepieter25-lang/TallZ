@@ -63,7 +63,7 @@ export function SwipeDeck({
 
   return (
     <div>
-      <p className="mb-3 font-mono text-xs uppercase tracking-[0.12em] text-orange">
+      <p className="mb-3 font-mono text-xs uppercase tracking-[0.12em] text-accent">
         {index + 1} / {products.length}
       </p>
       <div className="relative aspect-[3/4] overflow-hidden border border-line">
@@ -94,7 +94,7 @@ export function SwipeDeck({
         <button
           onClick={() => decide(true)}
           aria-label="Like"
-          className="flex h-14 w-14 items-center justify-center border border-orange bg-orange font-mono text-xl text-white transition-colors duration-150 ease-out hover:bg-background hover:text-orange"
+          className="flex h-14 w-14 items-center justify-center border border-accent bg-accent font-mono text-xl text-white transition-colors duration-150 ease-out hover:bg-background hover:text-accent"
         >
           ♥
         </button>

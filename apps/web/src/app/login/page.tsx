@@ -50,10 +50,10 @@ function Login() {
         </form>
 
         <div className="mt-6 flex items-center justify-between font-mono text-xs uppercase tracking-[0.1em] text-background/70">
-          <Link href="/reset-password" className="hover:text-orange">
+          <Link href="/reset-password" className="hover:text-accent">
             Forgot password?
           </Link>
-          <Link href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"} className="hover:text-orange">
+          <Link href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"} className="hover:text-accent">
             Create an account
           </Link>
         </div>

@@ -59,7 +59,7 @@ export default async function Feed({
   return (
     <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-14 sm:px-8">
       <div className="mb-10">
-        <p className="font-mono text-xs uppercase tracking-[0.12em] text-orange">
+        <p className="font-mono text-xs uppercase tracking-[0.12em] text-accent">
           {params.height ? `${params.height} / ` : ""}your feed
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">

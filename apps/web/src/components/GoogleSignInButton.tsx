@@ -20,7 +20,7 @@ export function GoogleSignInButton({ next, dark = false }: { next?: string; dark
       className={
         dark
           ? "flex h-12 w-full items-center justify-center gap-2 border border-background/30 bg-transparent font-mono text-xs uppercase tracking-[0.1em] text-background transition-colors duration-150 ease-out hover:border-background"
-          : "flex h-12 w-full items-center justify-center gap-2 border border-foreground bg-transparent font-mono text-xs uppercase tracking-[0.1em] transition-colors duration-150 ease-out hover:border-orange hover:text-orange"
+          : "flex h-12 w-full items-center justify-center gap-2 border border-foreground bg-transparent font-mono text-xs uppercase tracking-[0.1em] transition-colors duration-150 ease-out hover:border-accent hover:text-accent"
       }
     >
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">

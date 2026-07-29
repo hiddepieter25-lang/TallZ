@@ -2,7 +2,7 @@
 
 Project scope for a shopping platform for tall people. Read this before making any product, design, or technical decision.
 
-**Tradeoff:** This scope favors a strong, focused identity (Zara aesthetic, tall-people niche, discovery-first) over generic marketplace features. When in doubt, cut scope rather than add it.
+**Tradeoff:** This scope favors a strong, focused identity ("cheap fashion in a high-fashion jacket", tall-people niche, discovery-first) over generic marketplace features. When in doubt, cut scope rather than add it.
 
 ## 1. The Problem
 
@@ -20,13 +20,14 @@ Project scope for a shopping platform for tall people. Read this before making a
 - Products are sourced from external retailers/brands that carry sizes suited to tall people.
 - The platform's value is curation and discovery, not manufacturing.
 
-## 3. Aesthetic: Zara, Not a Comparison Site
+## 3. Aesthetic: An Aesthetic Closet on Your Phone, Not a Comparison Site
 
-**If it looks like a spreadsheet with photos, it's wrong.**
+**If it looks like a spreadsheet with photos, it's wrong. If it looks like an expensive boutique, it's also wrong — the clothes are affordable, the presentation just isn't cheap.**
 
-- Minimal, high-end, lots of whitespace, strong product photography.
-- No "corporate" or "clinical" UI patterns.
-- Should feel like a fashion/lifestyle brand a user wants to open, not a tool they're forced to use.
+- Founder's own framing: "cheap fashion in a high-fashion jacket." Products stay accessible; the feed, photography, and app-like polish make them feel elevated.
+- Mobile-first, feed-native — closer to a personal Pinterest/Instagram "closet" than a poster or a boutique website. See `apps/mobile/DESIGN.md`.
+- No "corporate" or "clinical" UI patterns. No cold/gallery-like editorial either (that was tried and rejected — see DESIGN.md history).
+- Should feel like an app a user wants to keep scrolling and shopping, not a tool they're forced to use.
 
 ## 4. Core Feature: Search First, Personalized Feed as a Secondary Path
 
@@ -58,12 +59,13 @@ Research backing all of the below is in `MARKET_RESEARCH.md`. Items marked **RES
 - **Launch geography — RESOLVED.** Europe first, then UK and USA. This is about where TALLZ launches/markets to users — the retailer sourcing itself stays global (see `MARKET_RESEARCH.md` §3).
 - **Launch plan — RESOLVED.** Soft launch first (close friends + tall-size Discord/niche communities) for feedback, then a wider social-media push to grow the user base.
 - **Budget — RESOLVED.** No large budget. Up to ~$100/month if genuinely necessary, but default to free options as long as possible.
-- **Aesthetic — RESOLVED, see `apps/mobile/DESIGN.md`.** The founder replaced the earlier serif/rounded direction with a full, exact design system doc — treat that file as the living source of truth for colors, type, spacing, components, motion, and voice rather than re-describing it here (it changes independently of this doc and duplicating it would just drift out of sync). Summary: Swiss-poster aesthetic, black/paper/orange, Archivo + JetBrains Mono, hard 12-column grid, square corners everywhere, restrained 150ms motion. DESIGN.md's line that search is "the core of the product, on the homepage large and unmissable" is accurate again as of the 2026-07-27 search-first call in §4 above — no contradiction between the two docs anymore.
+- **Aesthetic — RESOLVED, see `apps/mobile/DESIGN.md`.** Treat that file as the living source of truth for colors, type, spacing, components, motion, and voice rather than re-describing it here (it changes independently of this doc and duplicating it would just drift out of sync). The Swiss-poster system (black/paper/orange, Archivo + JetBrains Mono, hard corners) was retired 2026-07-29 after the founder reviewed a mockup and found it read as expensive/boutique rather than "affordable fashion, elevated." New direction: warm paper/cobalt palette, single Archivo family (no separate mono face), rounded shape language, mobile-first feed structure, warm color-graded photography instead of stark b/w. Search stays the homepage's primary flow (§4 above is unaffected — this was a visual/tone change, not an information-architecture change).
+- **Naming & logo — OPEN, not yet resolved.** The founder is considering renaming the brand and changing the logo, but hasn't decided or picked a direction. Keep using "TallZ" everywhere until this is explicitly resolved — don't introduce a new name in only some places.
 
 ## 7. How to Work With Me
 
 - State your assumptions before implementing. If something in this doc is ambiguous, ask — don't guess.
-- Prioritize the Zara aesthetic and the discovery feed over standard e-commerce UX conventions.
+- Prioritize the "aesthetic closet" feel and the discovery feed over standard e-commerce UX conventions.
 - Don't add scope beyond what's written here without checking first.
 
 ---
