@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { currencySymbol, type Product } from "@/lib/products";
 import { ProductSwatch } from "@/components/ProductSwatch";
-import { trackProductClick, trackProductEvent, type Placement } from "@/lib/track";
+import { trackProductClick, type Placement } from "@/lib/track";
 
 const BOTTOMS_CATEGORIES = new Set(["Trousers", "Denim", "Cargo", "Activewear"]);
 
@@ -18,6 +17,13 @@ function fitLine(product: Product): string | null {
   return parts.length ? parts.join(" · ") : null;
 }
 
+/**
+ * The homepage teaser card. Intentionally has no save button — this is the
+ * shop window for signed-out visitors, so it shows what the catalog looks like
+ * and nothing more. Saving lives on the account-gated surfaces (`MasonryFeed`
+ * on /feed and /search, `ExploreFeed` on /explore), which is where a signed-in
+ * user actually builds their closet.
+ */
 export function ProductCard({
   product,
   priority = false,
@@ -29,19 +35,6 @@ export function ProductCard({
   placement?: Placement;
 }) {
   const fit = fitLine(product);
-  const [saved, setSaved] = useState(false);
-
-  const toggleSave = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSaved((s) => !s);
-    trackProductEvent({
-      productId: product.id,
-      retailerId: product.retailerId,
-      signalType: saved ? "ignore" : "save",
-      placement,
-    });
-  };
 
   const card = (
     <article className="group overflow-hidden rounded-2xl bg-card">
@@ -62,15 +55,6 @@ export function ProductCard({
             className="absolute inset-0 transition-[filter] duration-150 ease-out group-hover:contrast-110"
           />
         )}
-        <button
-          aria-label={saved ? "Unsave" : "Save"}
-          onClick={toggleSave}
-          className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors duration-150 ease-out ${
-            saved ? "bg-accent text-white" : "bg-card/90 text-foreground hover:bg-foreground hover:text-background"
-          }`}
-        >
-          ♥
-        </button>
         {fit && (
           <span className="absolute bottom-2 left-2 rounded-full bg-foreground/80 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.04em] text-background">
             {fit}

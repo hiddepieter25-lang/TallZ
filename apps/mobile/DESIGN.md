@@ -76,8 +76,10 @@ Fixed section order — implemented in `apps/web/src/app/page.tsx`:
 1. **Hero** — two-column on desktop, stacked on mobile: headline + lede on one side, the logo silhouette centred on a black card on the other. The mark is held at its native 256px and inverted to white; the card scales, the silhouette never upscales (it's a raster — see note below).
 2. **Search** — the primary search input plus a row of rounded filter chips (inseam, sleeve, torso). See Search below.
 3. **Statement** — a single blunt line about the fit problem, on a full-bleed ink band. Still one full-bleed block maximum per page.
-4. **Quiz prompt** — only rendered when the user is signed in **and** has no saved onboarding response. It disappears permanently once answered; changing answers moves to `/account` → "Change my style answers", which re-runs the quiz prefilled.
-5. **Product grid** — "The newest finds", real products from the catalog, rounded cards with a save-heart and a fit badge, same `ProductCard` used on `/explore` and `/feed`.
+4. **Quiz prompt** — only rendered when the user is signed in **and** has no saved onboarding response. It disappears permanently once answered; changing answers moves to `/account` → "Change my style answers", which re-runs the quiz prefilled. Deliberately nothing renders here for signed-out visitors: the product photos below do the convincing, not a sales pitch.
+5. **Product grid** — "The newest finds": the four most recently ingested products **that have a real photo**, newest first. This is the shop window for signed-out visitors, so no placeholder swatches and **no save-heart** — `ProductCard` deliberately omits it. Saving belongs on the account-gated surfaces (`MasonryFeed`, `ExploreFeed`), where the heart is kept.
+
+   A future variation the founder has floated: hand-picking a small weekly selection here instead of a pure "newest" sort. Not built.
 
 **Logo asset note:** the only mark available is `apps/web/public/favicon-mark.png` at 256×256. There is no vector version, so it must never be displayed larger than 256px or it goes soft. If a real SVG is ever produced, swapping it into the hero is a one-line change and the size cap can go.
 

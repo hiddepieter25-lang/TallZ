@@ -96,6 +96,8 @@ export interface Product {
   material: string | null;
   pattern: string | null;
   gender: "men" | "women" | "unisex" | null;
+  /** When the product was ingested — drives the homepage's "newest finds" ordering. */
+  createdAt: string;
 }
 
 // Backed by Supabase (retailers/products/tall_sizes — see
@@ -106,7 +108,7 @@ export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, price_cents, currency, style_tags, category, size_note, fit, inseam_cm, sleeve_cm, body_length_cm, fit_notes, product_url, color, material, pattern, gender, retailers(id, name, region, shipping_countries), product_images(image_url)"
+      "id, name, price_cents, currency, style_tags, category, size_note, fit, inseam_cm, sleeve_cm, body_length_cm, fit_notes, product_url, color, material, pattern, gender, created_at, retailers(id, name, region, shipping_countries), product_images(image_url)"
     )
     .eq("active", true)
     .order("created_at", { ascending: true });
@@ -144,6 +146,7 @@ export async function getProducts(): Promise<Product[]> {
       material: row.material ?? null,
       pattern: row.pattern ?? null,
       gender: (row.gender ?? null) as Product["gender"],
+      createdAt: row.created_at,
     };
   });
 }
@@ -357,7 +360,7 @@ export function distinctMaterials(products: Product[]): string[] {
   return [...new Set(products.map((p) => p.material).filter((m): m is string => !!m))].sort();
 }
 
-function diversifyByRetailer(products: Product[]): Product[] {
+export function diversifyByRetailer(products: Product[]): Product[] {
   const byRetailer = new Map<string, Product[]>();
   for (const p of products) {
     if (!byRetailer.has(p.retailer)) byRetailer.set(p.retailer, []);

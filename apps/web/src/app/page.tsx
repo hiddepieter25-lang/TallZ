@@ -1,6 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getLatestOnboardingResponse, getProducts, getRetailerNames } from "@/lib/products";
+import {
+  diversifyByRetailer,
+  getLatestOnboardingResponse,
+  getProducts,
+  getRetailerNames,
+} from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 import { buttonClasses } from "@/components/Button";
 import { inputClasses } from "@/lib/ui-classes";
@@ -31,12 +36,19 @@ export default async function Home() {
   const savedAnswers = user ? await getLatestOnboardingResponse(supabase, user.id) : null;
   const showQuizPrompt = !!user && !savedAnswers;
 
-  // Lead with products that have real ingested photos (currently the
-  // Shopify-sourced retailers — see MARKET_RESEARCH.md §4) so the landing
-  // page shows off real data rather than placeholders where possible.
-  const teaser = [...allProducts]
-    .sort((a, b) => Number(!!b.imageUrl) - Number(!!a.imageUrl))
-    .slice(0, 4);
+  // The shop window for signed-out visitors, so it has to be actually new,
+  // actually photographed, and varied — a placeholder swatch sells nothing,
+  // and four near-identical items from one brand doesn't show the range.
+  // Ingestion writes a whole retailer's batch with one timestamp, so "newest"
+  // alone would return four items from whichever retailer synced last; taking
+  // a recent window and round-robining across retailers fixes that.
+  const RECENT_WINDOW = 24;
+  const teaser = diversifyByRetailer(
+    allProducts
+      .filter((p) => p.imageUrl)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, RECENT_WINDOW)
+  ).slice(0, 4);
 
   return (
     <div className="flex flex-1 flex-col">
