@@ -24,6 +24,9 @@ export default async function Account() {
       <ChangePasswordForm />
 
       <div className="mt-10 flex flex-col gap-3 border-t border-line pt-6 font-mono text-xs uppercase tracking-[0.1em]">
+        <Link href="/onboarding" className="hover:text-accent">
+          Change my style answers
+        </Link>
         <Link href="/admin" className="hover:text-accent">
           Admin dashboard
         </Link>

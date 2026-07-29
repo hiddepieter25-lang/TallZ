@@ -63,15 +63,23 @@ Rules:
 - One "hero card" moment per screen/section is allowed to be bold (oversized type over a photo); everything around it stays quiet.
 - Thin hairline rules still separate sections — kept from the old system, still useful, still restrained.
 
+## Access & accounts
+
+The homepage is the only public browsing surface. `/feed`, `/explore` and `/search` all require an account and redirect to `/login` with a `next` param when signed out (Pinterest's pattern: an open landing page, a wall in front of the browsing). A logged-out search carries its query through login so the user lands on results, not an empty page.
+
+The nav therefore always has to offer a way in: signed out shows a **Log in** text link plus a filled **Sign up** pill; signed in shows the initial avatar linking to `/account`. Order across the bar is logo → Feed/Explore → search → account, account furthest right.
+
 ## Homepage Structure
 
 Fixed section order — implemented in `apps/web/src/app/page.tsx`:
 
-1. **Hero** — two-column on desktop, stacked on mobile: headline + lede + search on one side, an "algorithm pick" style photo card (bold type overlapping the image) on the other.
-2. **Search** — the primary search input plus a horizontally-scrollable row of rounded filter chips (inseam, sleeve, torso, "under €30"). See Search below.
-3. **Statement** — a single blunt line about the fit problem, on a warm/ink band. Still one full-bleed block maximum per page.
-4. **Product grid** — "New in [category]", real products pulled from the catalog, rounded cards with a save-heart and a fit badge, same `ProductCard` used on `/explore` and `/feed`.
-5. **Quiz CTA** — secondary, links to onboarding for the personalized feed. Still the fallback path, not the lead.
+1. **Hero** — two-column on desktop, stacked on mobile: headline + lede on one side, the logo silhouette centred on a black card on the other. The mark is held at its native 256px and inverted to white; the card scales, the silhouette never upscales (it's a raster — see note below).
+2. **Search** — the primary search input plus a row of rounded filter chips (inseam, sleeve, torso). See Search below.
+3. **Statement** — a single blunt line about the fit problem, on a full-bleed ink band. Still one full-bleed block maximum per page.
+4. **Quiz prompt** — only rendered when the user is signed in **and** has no saved onboarding response. It disappears permanently once answered; changing answers moves to `/account` → "Change my style answers", which re-runs the quiz prefilled.
+5. **Product grid** — "The newest finds", real products from the catalog, rounded cards with a save-heart and a fit badge, same `ProductCard` used on `/explore` and `/feed`.
+
+**Logo asset note:** the only mark available is `apps/web/public/favicon-mark.png` at 256×256. There is no vector version, so it must never be displayed larger than 256px or it goes soft. If a real SVG is ever produced, swapping it into the hero is a one-line change and the size cap can go.
 
 ## Components
 

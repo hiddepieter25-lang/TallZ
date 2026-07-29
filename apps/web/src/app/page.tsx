@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getProducts, getRetailerNames } from "@/lib/products";
+import Image from "next/image";
+import { getLatestOnboardingResponse, getProducts, getRetailerNames } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 import { buttonClasses } from "@/components/Button";
 import { inputClasses } from "@/lib/ui-classes";
@@ -23,7 +24,13 @@ export default async function Home() {
     allProducts,
     retailers,
   ] = await Promise.all([supabase.auth.getUser(), getProducts(), getRetailerNames()]);
-  const onboardingHref = user ? "/onboarding" : "/login?next=%2Fonboarding";
+
+  // The quiz prompt is only for signed-in users who haven't answered yet —
+  // once there's a saved response it disappears for good, and changing the
+  // answers moves to /account.
+  const savedAnswers = user ? await getLatestOnboardingResponse(supabase, user.id) : null;
+  const showQuizPrompt = !!user && !savedAnswers;
+
   // Lead with products that have real ingested photos (currently the
   // Shopify-sourced retailers — see MARKET_RESEARCH.md §4) so the landing
   // page shows off real data rather than placeholders where possible.
@@ -33,7 +40,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Hero — 01 / index */}
+      {/* Hero */}
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-6 px-4 pb-20 pt-16 sm:px-8 sm:pt-24">
         <div className="col-span-12 flex flex-col justify-center lg:col-span-6">
           <p className="font-mono text-xs uppercase tracking-[0.12em] text-muted">
@@ -54,43 +61,47 @@ export default async function Home() {
             from yours.
           </h1>
           <p className="mt-8 max-w-[52ch] text-base leading-relaxed text-muted">
-            Affordable tall-fit finds from {retailers.length} retailers, curated like a feed you'd
-            actually want to scroll. Search, filter by inseam and sleeve, tap through, and check
-            out on the seller's own site — TallZ just makes the match.
+            Affordable tall-fit finds from {retailers.length}{" "}
+            retailers, curated like a feed you&apos;d actually want to scroll. Search, filter by
+            inseam and sleeve, tap through, and check out on the seller&apos;s own site — TallZ
+            just makes the match.
           </p>
         </div>
         <figure className="col-span-12 mt-12 lg:col-span-5 lg:col-start-8 lg:mt-0">
-          <div
-            className="relative flex aspect-[3/4] items-end overflow-hidden rounded-3xl p-6"
-            style={{
-              background:
-                "radial-gradient(120% 90% at 20% 10%, rgba(255,255,255,0.22), transparent 55%), linear-gradient(160deg, #C9603B 0%, #8E3A2A 55%, #4A2018 100%)",
-            }}
-          >
-            <span className="absolute left-6 top-6 rounded-full bg-card/90 px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-foreground">
-              Algorithm pick
+          {/* The logo mark, kept at its native 256px so it stays sharp — the
+              card scales, the silhouette doesn't. Inverted because the source
+              PNG is a black silhouette and this card is black. */}
+          <div className="relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-3xl bg-foreground">
+            {/* unoptimized on purpose: the optimizer was re-encoding this to
+                128px, which the browser then upscaled back to 256 — a net
+                quality loss. It's a 7KB two-tone PNG, so there's nothing to
+                gain from optimizing it anyway. */}
+            <Image
+              src="/favicon-mark.png"
+              alt=""
+              width={256}
+              height={256}
+              priority
+              unoptimized
+              className="h-auto w-[62%] max-w-[256px] invert"
+            />
+            <span className="absolute inset-x-6 bottom-6 font-mono text-xs uppercase tracking-[0.12em] text-background/70">
+              Cut long, worn well
             </span>
-            <h2
-              className="font-bold uppercase text-card"
-              style={{ fontSize: "clamp(28px, 3.2vw, 40px)", lineHeight: 0.95, letterSpacing: "-0.01em" }}
-            >
-              New drops,
-              <br />
-              your length.
-            </h2>
           </div>
-          <figcaption className="mt-3 font-mono text-xs text-muted">
-            Curated for your height — updated as you scroll
-          </figcaption>
         </figure>
       </section>
 
-      {/* Search — 02 / search */}
+      {/* Search */}
       <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8 sm:py-32" id="search">
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8">
             <p className="font-mono text-xs uppercase tracking-[0.12em] text-muted">find your fit</p>
-            <form action="/search" method="get" className="mt-6 flex overflow-hidden rounded-full border border-foreground">
+            <form
+              action="/search"
+              method="get"
+              className="mt-6 flex overflow-hidden rounded-full border border-foreground"
+            >
               <input
                 name="q"
                 type="search"
@@ -98,7 +109,10 @@ export default async function Home() {
                 aria-label="Search tall clothing"
                 className={`${inputClasses} flex-1 rounded-none border-0`}
               />
-              <button type="submit" className="rounded-none border-0 bg-accent px-8 font-mono text-xs font-medium uppercase tracking-[0.12em] text-white transition-colors duration-150 ease-out hover:opacity-85">
+              <button
+                type="submit"
+                className="rounded-none border-0 bg-accent px-8 font-mono text-xs font-medium uppercase tracking-[0.12em] text-background transition-opacity duration-150 ease-out hover:opacity-80"
+              >
                 Search
               </button>
             </form>
@@ -130,12 +144,36 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Products — 04 / new in tall */}
+      {/* Quiz prompt — signed in, not yet answered. Sits above the grid so it's
+          the first thing a new account sees after the statement. */}
+      {showQuizPrompt && (
+        <section className="border-b border-line px-4 py-20 sm:px-8 sm:py-28">
+          <div className="mx-auto grid max-w-[1440px] grid-cols-12 items-center gap-6">
+            <div className="col-span-12 lg:col-span-8">
+              <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-muted">
+                build your closet
+              </p>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">
+                answer a few questions.
+                <br />
+                get a feed made for your height.
+              </h2>
+            </div>
+            <div className="col-span-12 lg:col-span-4 lg:text-right">
+              <Link href="/onboarding" className={`${buttonClasses.primary} w-fit lg:ml-auto`}>
+                Get started
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Products */}
       <section className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8 sm:py-32" id="new">
         <div className="flex items-end justify-between border-b border-line pb-5">
           <div>
-            <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-accent">new in tall</p>
-            <h2 className="text-3xl font-bold tracking-tight">This week's edit</h2>
+            <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-muted">just landed</p>
+            <h2 className="text-3xl font-bold tracking-tight">The newest finds</h2>
           </div>
           <Link href="/explore" className="font-mono text-xs uppercase tracking-[0.12em] hover:text-accent">
             View all
@@ -145,25 +183,6 @@ export default async function Home() {
           {teaser.map((product) => (
             <ProductCard key={product.id} product={product} priority />
           ))}
-        </div>
-      </section>
-
-      {/* Quiz — secondary path to the personalized feed */}
-      <section className="border-t border-line px-4 py-20 sm:px-8 sm:py-28">
-        <div className="mx-auto grid max-w-[1440px] grid-cols-12 items-center gap-6">
-          <div className="col-span-12 lg:col-span-8">
-            <p className="mb-2 font-mono text-xs uppercase tracking-[0.12em] text-accent">build your closet</p>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">
-              answer a few questions.
-              <br />
-              get a feed made for your height.
-            </h2>
-          </div>
-          <div className="col-span-12 lg:col-span-4 lg:text-right">
-            <Link href={onboardingHref} className={`${buttonClasses.primary} w-fit lg:ml-auto`}>
-              Get started
-            </Link>
-          </div>
         </div>
       </section>
     </div>

@@ -1,17 +1,31 @@
+import { redirect } from "next/navigation";
 import { MasonryFeed, type MasonryItem } from "@/components/MasonryFeed";
 import { getImageDimensionsBatch } from "@/lib/image-dimensions";
 import { getProducts } from "@/lib/products";
+import { createClient } from "@/lib/supabase/server";
 
 const FALLBACK_RATIO = { width: 4, height: 5 };
 
 // Search is the primary discovery flow (see CLAUDEMODE.md) — this is where
-// the nav search box and the homepage search section both point.
+// the nav search box and the homepage search section both point. Results are
+// account-gated, so a logged-out search carries its query through the login
+// and lands the user on their results instead of an empty page.
 export default async function Search({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    const next = q ? `/search?q=${encodeURIComponent(q)}` : "/search";
+    redirect(`/login?next=${encodeURIComponent(next)}`);
+  }
+
   const allProducts = await getProducts();
   const query = (q ?? "").trim().toLowerCase();
   const products = query

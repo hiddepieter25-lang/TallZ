@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
 export type StyleTag =
@@ -225,6 +226,47 @@ export function paramsToAnswers(params: {
     proportion: params.proportion as Proportion | undefined,
     fitPreference: params.fit as FitPreference | undefined,
     budget: params.budget as BudgetBand | undefined,
+  };
+}
+
+export interface SavedOnboarding extends QuizAnswers {
+  heightRange: string | null;
+}
+
+/**
+ * The user's most recent quiz answers, or null if they've never finished it.
+ *
+ * `onboarding_responses` is append-only — re-taking the quiz inserts a new row
+ * rather than updating, so "current answers" is always the newest row. Takes
+ * the Supabase client as an argument because reading this table needs an
+ * auth-aware client (RLS gates it on `auth.uid() = user_id`); the plain client
+ * in `@/lib/supabase` carries no session and would always come back empty.
+ */
+export async function getLatestOnboardingResponse(
+  client: SupabaseClient,
+  userId: string
+): Promise<SavedOnboarding | null> {
+  const { data, error } = await client
+    .from("onboarding_responses")
+    .select("height_range, styles, occasions, proportion, fit_preference, budget")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to read onboarding response:", error.message);
+    return null;
+  }
+  if (!data) return null;
+
+  return {
+    heightRange: data.height_range ?? null,
+    swipeTags: (data.styles ?? []) as StyleTag[],
+    occasions: (data.occasions ?? []) as OccasionTag[],
+    proportion: (data.proportion ?? undefined) as Proportion | undefined,
+    fitPreference: (data.fit_preference ?? undefined) as FitPreference | undefined,
+    budget: (data.budget ?? undefined) as BudgetBand | undefined,
   };
 }
 

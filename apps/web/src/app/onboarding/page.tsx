@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   answersToParams,
+  getLatestOnboardingResponse,
   getSwipeDeckProducts,
   BUDGET_BANDS,
   FIT_PREFERENCES,
@@ -103,13 +104,31 @@ export default function Onboarding() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         router.replace("/login?next=%2Fonboarding");
         return;
       }
+
+      // Prefill from the last saved answers so "change my answers" starts from
+      // what they picked before instead of a blank quiz. Finishing inserts a
+      // new row (the table is append-only) and the newest one wins.
+      const saved = await getLatestOnboardingResponse(supabase, user.id);
+      if (saved) {
+        setHeight(saved.heightRange);
+        setProportion(saved.proportion ?? null);
+        setOccasions(saved.occasions);
+        setFitPreference(saved.fitPreference ?? null);
+        setBudget(saved.budget ?? null);
+        // Non-null means the swipe step is already satisfied — they can move
+        // past it without re-swiping, but swiping again still overwrites.
+        setSwipeTags(saved.swipeTags);
+      }
       setAuthChecked(true);
-    });
+    })();
   }, [router]);
 
   useEffect(() => {

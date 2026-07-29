@@ -1,7 +1,15 @@
+import { redirect } from "next/navigation";
 import { ExploreFeed } from "@/components/ExploreFeed";
 import { getProducts, rankProducts } from "@/lib/products";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function Explore() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=%2Fexplore");
+
   const allProducts = await getProducts();
   // No quiz answers here on purpose — this is pure discovery, not the
   // personalized feed. rankProducts still gives every product a diversified,

@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import { MasonryFeed, type MasonryItem } from "@/components/MasonryFeed";
 import { CatalogFilterBar } from "@/components/CatalogFilterBar";
 import { getImageDimensionsBatch } from "@/lib/image-dimensions";
+import { createClient } from "@/lib/supabase/server";
 import {
   applyCatalogFilters,
   distinctColors,
@@ -32,6 +34,12 @@ export default async function Feed({
     gender?: string;
   }>;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=%2Ffeed");
+
   const [params, allProducts, health] = await Promise.all([
     searchParams,
     getProducts(),
