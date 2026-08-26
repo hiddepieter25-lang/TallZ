@@ -6,21 +6,34 @@ A discovery-first marketplace aggregating clothing from external retailers for t
 
 npm workspaces monorepo:
 
-- `apps/web` — Next.js (TypeScript, Tailwind, App Router)
-- `apps/mobile` — Expo (TypeScript)
+- `apps/mobile` — **the product.** Expo SDK 57 + expo-router + React Native (TypeScript).
+- `apps/web` — Next.js. Being reduced to the **admin panel** (catalog, retailers, analytics, algorithm) plus `/privacy`, which both app stores require as a public URL. Its public pages are retired.
+- `scripts/` — the retailer ingestion jobs, run on a schedule by GitHub Actions.
+
+Both apps talk to the same Supabase project and the same RLS policies. Design rules live in [apps/mobile/DESIGN.md](./apps/mobile/DESIGN.md); the tokens are implemented in `apps/mobile/src/lib/theme.ts`.
 
 ## Getting started
 
 ```bash
 npm install
+```
 
-# web
-npm run dev --workspace=apps/web
+**Mobile (the app):**
 
-# mobile
+```bash
 npm run start --workspace=apps/mobile
+```
+
+Then scan the QR code with **Expo Go** on a phone. `npx expo start --web` renders it in a browser via react-native-web, which is useful for a quick look but is *not* a substitute for a real device — safe areas, tap targets and the in-app browser only behave correctly on hardware.
+
+Needs `apps/mobile/.env.local` with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Expo only reads env vars at startup, so restart the dev server after changing them.
+
+**Web (admin):**
+
+```bash
+npm run dev --workspace=apps/web
 ```
 
 ## Open decisions
 
-Product data sourcing, recommendation algorithm, monetization, and the exact definition of "tall" fit scope are unresolved — see [CLAUDEMODE.md](./CLAUDEMODE.md#6-open-decisions--ask-dont-assume) before building features that depend on them.
+Product data sourcing, the recommendation algorithm beyond the current heuristic, and monetization details are unresolved — see [CLAUDEMODE.md](./CLAUDEMODE.md#6-open-decisions--ask-dont-assume) before building features that depend on them. The brand name and logo are also still open.

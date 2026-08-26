@@ -1,6 +1,10 @@
 # DESIGN.md — TallZ
 
-Design rules for the TallZ website. Follow these unless told otherwise.
+Design rules for the TallZ **mobile app** (`apps/mobile`, Expo + React Native). Follow these unless told otherwise.
+
+The tokens below live in code at `apps/mobile/src/lib/theme.ts` — that file is the implementation, this doc is the reasoning. Change both together.
+
+**Web note:** `apps/web` is now the admin panel only (founder call, 2026-08-26 — see `CLAUDEMODE.md` §6). Its public pages are being retired. Where a rule below mentions the website, it is history kept for context, not a live instruction.
 
 **What TallZ is:** an aesthetic closet you carry on your phone — affordable tall-fit clothing, presented like a fashion drop, one tap from checkout on the seller's own site. "Cheap fashion in a high-fashion jacket": the pieces are accessible, the presentation isn't. Feed-native, algorithm-driven, built to be pleasant to scroll, not a spreadsheet with photos.
 
@@ -35,16 +39,19 @@ One family, two weights doing different jobs — the old mono-for-labels convent
 --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif; /* everything: headings, body, labels, prices */
 ```
 
-Sizes:
+Sizes (as shipped in `theme.ts` — React Native takes absolute numbers, there is no `clamp`):
 
-| Use | Size | Weight | Notes |
+| Use | Size / line-height | Weight | Notes |
 |---|---|---|---|
-| Hero / oversized wordmark | `clamp(40px, 9vw, 96px)` | 800–900 | Tight — `letter-spacing: -0.02em`, often uppercase, frequently overlapping a photo |
-| H1 | 40px | 700 | |
-| H2 | 24–28px | 700 | |
-| Body | 16px | 400 | `line-height: 1.6`, max 65 characters wide |
-| Label / meta | 10–11px | 600–700 | UPPERCASE, `letter-spacing: 0.06–0.1em` — same family as headings, not a mono face |
-| Price | 13–20px | 700 | Same sans, never monospace |
+| Hero | 40 / 42 | 700 | Tight, `letterSpacing: -0.8` |
+| H1 | 28 / 32 | 700 | Screen titles |
+| H2 | 20 / 25 | 700 | Section and wordmark |
+| Body | 16 / 24 | 400 | |
+| Small | 14 / 20 | 400 | Product names, secondary copy |
+| Label / meta | 11 / 14 | 600 | UPPERCASE, `letterSpacing: 1.1` — same family as headings, never a mono face |
+| Price | 15 / 20 | 700 | Same sans, never monospace |
+
+Archivo is loaded through `@expo-google-fonts/archivo` and referenced by its four weight names (`Archivo_400Regular` … `Archivo_700Bold`). React Native has no font synthesis worth relying on, so a weight that isn't loaded silently falls back — add the weight to the `useFonts` call in `src/app/_layout.tsx` before using it.
 
 Rules:
 
@@ -54,55 +61,55 @@ Rules:
 
 ## Layout
 
-Mobile-first. The product is a phone-native scrollable feed first, a responsive website second — design the feed, then adapt it up to desktop width (a centered, moderately narrow column or a grid), not the other way around.
+Phone-native. There is no desktop breakpoint to design toward any more — the constraint is a ~375pt-wide screen with a notch at the top and a home indicator at the bottom.
 
 Rules:
 
-- Chips, cards, and rails scroll horizontally where that reads as natural (category filters, quick collections) — an app pattern, not a poster pattern.
-- Generous gaps over generous margins — spacing comes from `gap` in flex/grid feeds, not from a strict 12-column poster grid.
-- One "hero card" moment per screen/section is allowed to be bold (oversized type over a photo); everything around it stays quiet.
-- Thin hairline rules still separate sections — kept from the old system, still useful, still restrained.
+- **Safe areas are not optional.** Every screen wraps in `SafeAreaView` from `react-native-safe-area-context`. Content that ignores them ends up under the notch or the home indicator on real hardware — and this is invisible in the browser preview, so it must be checked on a device.
+- **44pt minimum tap target** (`MIN_TAP` in `theme.ts`), the floor both platforms publish. A visually small control (a heart, a text link) still needs 44pt of touchable area — use `hitSlop` rather than inflating the visual.
+- Chips, cards, and rails scroll horizontally where that reads as natural (category filters, quick collections).
+- Spacing comes from `gap` and the `space` scale in `theme.ts`, not ad-hoc margins.
+- One bold moment per screen (oversized type over a photo); everything around it stays quiet.
+- Thin hairline rules still separate sections — kept from the old system, still restrained.
 
 ## Access & accounts
 
-The homepage is the only public browsing surface. `/feed`, `/explore` and `/search` all require an account and redirect to `/login` with a `next` param when signed out (Pinterest's pattern: an open landing page, a wall in front of the browsing). A logged-out search carries its query through login so the user lands on results, not an empty page.
+**Everything requires an account.** There is no public browsing surface in the app: the root layout redirects to `/login` whenever there is no session, and away from `/login` once there is one. This is stricter than the old website, which kept a public landing page — a phone app has no equivalent of a shareable landing URL, so the shop-window job moves to the store listing screenshots instead.
 
-The nav therefore always has to offer a way in: signed out shows a **Log in** text link plus a filled **Sign up** pill; signed in shows the initial avatar linking to `/account`. Order across the bar is logo → Feed/Explore → search → account, account furthest right.
+The redirect waits on an explicit `ready` flag from the auth provider. Redirecting before the stored session has been read out of SecureStore would bounce a returning, signed-in user to the login screen on every cold start.
 
-## Homepage Structure
+## Screen structure
 
-Fixed section order — implemented in `apps/web/src/app/page.tsx`:
+Routes live in `apps/mobile/src/app` (expo-router, file-based):
 
-1. **Hero** — two-column on desktop, stacked on mobile: headline + lede on one side, the logo silhouette centred on a black card on the other. The mark is held at its native 256px and inverted to white; the card scales, the silhouette never upscales (it's a raster — see note below).
-2. **Search** — the primary search input plus a row of rounded filter chips (inseam, sleeve, torso). See Search below.
-3. **Statement** — a single blunt line about the fit problem, on a full-bleed ink band. Still one full-bleed block maximum per page.
-4. **Quiz prompt** — only rendered when the user is signed in **and** has no saved onboarding response. It disappears permanently once answered; changing answers moves to `/account` → "Change my style answers", which re-runs the quiz prefilled. Deliberately nothing renders here for signed-out visitors: the product photos below do the convincing, not a sales pitch.
-5. **Product grid** — "The newest finds": the four most recently ingested products **that have a real photo**, newest first. This is the shop window for signed-out visitors, so no placeholder swatches and **no save-heart** — `ProductCard` deliberately omits it. Saving belongs on the account-gated surfaces (`MasonryFeed`, `ExploreFeed`), where the heart is kept.
+- **`login.tsx` / `signup.tsx`** — email + password. Errors go through the shared `genericAuthMessage` so raw provider text never reaches the UI. Signup shows a "check your email" state rather than appearing to do nothing when email confirmation is on.
+- **`index.tsx`** — the feed. Two-column `FlatList` of `ProductCard`, ordered by `rankProducts`. Pull-to-refresh. Carries the consent prompt (below) and, for now, the log-out control.
 
-   A future variation the founder has floated: hand-picking a small weekly selection here instead of a pure "newest" sort. Not built.
+Not built yet: onboarding quiz, explore/swipe feed, account screen, password reset.
 
-**Logo asset note:** the only mark available is `apps/web/public/favicon-mark.png` at 256×256. There is no vector version, so it must never be displayed larger than 256px or it goes soft. If a real SVG is ever produced, swapping it into the hero is a one-line change and the size cap can go.
+## Consent
+
+Nothing is tracked until the user answers the consent prompt on the feed — `getConsent()` returning `null` means "not asked yet", and `trackProductEvent` no-ops. Outbound links to retailers work regardless; consent only gates whether the interaction is logged. This is the same two-state model as the web app, backed by AsyncStorage instead of localStorage.
 
 ## Components
 
-**Buttons** — rounded pill (`border-radius: 9999px`). Primary is solid black with white text. Secondary is a 1px black outline on transparent. Height 48px, uppercase label (regular sans, not mono), 24px horizontal padding. Hover inverts fill and text; no scale, no shadow.
+**There is no hover on touch.** Every rule that used to say "hover inverts fill" now means the **pressed** state, expressed through `Pressable`'s `({ pressed })` style callback. Reducing opacity to ~0.7–0.8 while pressed is the house style; no scale, no shadow.
 
-**Product cards** — `--card` surface, rounded corners (`~16px`), no border. Image on top at 3:4 portrait with a rounded save-heart button overlaid top-right and a small rounded "fit" badge overlaid bottom-left (e.g. "36\" inseam", "Tall fit ✓"). Below: brand in uppercase caps 10–11px, product name 12–16px regular, price in bold sans (a struck-through "was" price next to a discounted price is encouraged — this is a shopping feed, show the deal). Hover raises image contrast slightly; nothing moves.
+**Buttons** — rounded pill (`radius.pill`). Primary is solid black with white text, 52pt tall. Secondary is a 1px black outline on transparent. Uppercase label using `type.label`. Disabled drops to 0.4 opacity. A button doing async work shows an `ActivityIndicator` in place of its label rather than staying inert.
 
-**Filters** — presented as rounded pill chips in a horizontally-scrollable row, active state filled black. Tall-specific measurements (inseam, sleeve, height range) stay the primary filter.
+**Product cards** — `colors.card` surface, `radius.card` (16pt), no border. Image at 3:4 portrait with a rounded save-heart overlaid top-right and a small rounded "fit" badge bottom-left (e.g. "91cm inseam"). Below: brand in `type.label` muted, product name in `type.small` (max 2 lines), price in `type.price`. The whole card is the tap target for opening the retailer; the heart is a nested `Pressable` with `hitSlop`.
 
-**Nav** — thin, fixed, transparent over white. Logo left, links regular sans (not mono caps), search right. A 1px rule under it. It does not shrink or animate on scroll.
+**Outbound links** — always `WebBrowser.openBrowserAsync`, never `Linking.openURL`. The in-app browser returns the user to their place in the feed; kicking them out to Safari loses the session and the scroll position. Every outbound tap logs a `click` event first — the affiliate model depends on it.
 
-**Search** — rounded input, 1px black border, regular-sans placeholder. Still the core entry point; on the homepage it stays large and unmissable.
+**Filters** — rounded pill chips in a horizontally-scrollable row, active state filled black. Tall-specific measurements (inseam, sleeve, height range) stay the primary filter. *(Not built yet.)*
 
 ## Motion
 
-Restrained, but a little more alive than the old system.
+Restrained.
 
-- Transitions: `150–250ms ease-out` for hover/state changes.
-- A single orchestrated entrance (hero fade/rise on load) is allowed — one moment, not scattered effects.
+- 150–250ms for state changes.
 - Not allowed: bounce, spring, parallax, scroll-jacking, animated gradients, decorative loops.
-- Respect `prefers-reduced-motion` — disable the entrance animation for users who ask for it.
+- The web app's `prefers-reduced-motion` rule has a native equivalent: `AccessibilityInfo.isReduceMotionEnabled()`. Honour it if any non-trivial animation is ever added — right now there is none to gate.
 
 ## Imagery
 
@@ -129,5 +136,7 @@ Open question, not yet resolved — the founder is considering a new name/logo b
 
 - Any color accent — no orange, no cobalt, nothing. Black, white, grey only.
 - A separate mono/monospace typeface for labels — one family only
-- Centered layouts or centered body text
-- Animation that draws attention to itself beyond the one hero entrance
+- Centered body text
+- Animation that draws attention to itself
+- Tap targets under 44pt, or screens that skip `SafeAreaView`
+- `Linking.openURL` for retailer links — it drops the user out of the app

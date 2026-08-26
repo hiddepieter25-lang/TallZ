@@ -33,23 +33,29 @@ Project scope for a shopping platform for tall people. Read this before making a
 
 **Search is the primary flow. The quiz-driven feed is a secondary, opt-in path for users who want a personalized view.**
 
-- The homepage leads with a large, unmissable search — filterable by inseam, sleeve, and torso length before anything else. See `apps/mobile/DESIGN.md`.
-- `/explore` and `/feed` (the swipe-onboarded personalized feed) still exist and are real, working discovery surfaces — they just aren't the homepage's main act anymore.
+- Search is filterable by inseam, sleeve, and torso length before anything else. See `apps/mobile/DESIGN.md`.
+- The quiz-driven personalized feed and the explore/swipe surface remain real parts of the product — they just aren't the entry point.
 - This reverses the earlier "discovery over search" direction from a previous iteration of this doc. Founder call, 2026-07-27: switch back to search-first.
+- **Status after the 2026-08-26 move to an app (§6):** the app currently ships only the ranked feed — search, quiz and explore aren't built there yet. The search-first principle still stands as the target; it just hasn't been reached on the new platform. Don't read the current app as a change of direction.
 
 ## 5. Non-Goals
 
 **Don't build these unless explicitly asked:**
 
 - No in-house clothing brand or manufacturing.
-- No search-first UX as the primary path — it's a fallback, not the flow.
 - No generic "everything for everyone" marketplace — stay scoped to tall-fit clothing.
+- No public browsing in the app — an account is required (see §6). The store listing does the shop-window job that the old public homepage did.
+
+*(Removed 2026-08-26: a non-goal reading "No search-first UX as the primary path — it's a fallback, not the flow." It directly contradicted §4, which has said the opposite since the 2026-07-27 reversal. It was stale, not a second opinion.)*
 
 ## 6. Open Decisions — Ask, Don't Assume
 
 Research backing all of the below is in `MARKET_RESEARCH.md`. Items marked **RESOLVED** were explicit founder calls; items marked **PROPOSED** are the research-recommended default already reflected in the code, but haven't had an explicit sign-off — flag before assuming they're locked in for a real launch.
 
-- **Tech stack — RESOLVED.** Web first (`apps/web`). Mobile (`apps/mobile`) not started.
+- **Tech stack — RESOLVED, reversed 2026-08-26.** **Mobile app first** (`apps/mobile`, Expo SDK 57 + expo-router + React Native). `apps/web` is being reduced to the **admin panel only** — its public pages are retired. Founder call: shopping belongs in an app, and an app carries more value than a site. I had argued the opposite earlier (marketing an unknown app is harder than sharing a link); the founder reaffirmed with their own reasoning, so the decision stands and is not to be re-litigated.
+  - Two constraints that came out of researching this, both worth remembering: **Windows is not a blocker** (EAS Build compiles iOS in Expo's macOS cloud; free tier is 15 iOS + 15 Android builds/month and cannot overspend — it just stops until the 1st). And **Apple review guideline 4.2.2** rejects apps that are mainly "content aggregators, or a collection of links" — a literal description of an outbound-affiliate marketplace. The exemption is the opening clause *"Other than catalogs"*, so the app must be a genuine searchable/filterable catalog, not a link list. This is why a wrapped website was never an option (and Capacitor is separately blocked: Next.js `output: 'export'` forbids Server Actions and `cookies()`).
+  - **Google Play needs 12 testers opted in for 14 continuous days** before a personal account can ship to production. That is calendar time, not money — community recruitment has to start ~3 weeks before any Play launch date.
+  - `/privacy` stays live on the web app even though the rest of the public site goes: both stores require a publicly reachable privacy-policy URL for the listing.
 - **Definition of "tall people" scope — RESOLVED.** Full industry-standard tall market, not just 190cm+: ~183cm+ (6'0") men, ~173cm+ (5'8") women. Clothing length only for v1 — no shoe size or other fit metadata. See `MARKET_RESEARCH.md` intro + §2.1.
 - **Product data sourcing — PROPOSED.** Affiliate network feeds (CJ Affiliate, Rakuten Advertising, Awin) as primary, Shopify Storefront API for DTC brands not on a network, manual curation to fill gaps, scraping only as a last-resort fallback with per-retailer legal review. See `MARKET_RESEARCH.md` §4.3. **Blocked on affiliate program applications**, which need real business/tax/bank details only the founder can provide — not something that can be done from within Claude Code.
 - **Recommendation algorithm — PROPOSED.** Content-based, seeded by onboarding style-tag answers (already implemented in `apps/web`'s discovery feed). Collaborative filtering deferred until there's a real user base to generate interaction data.
