@@ -1,4 +1,5 @@
 import "react-native-get-random-values";
+import { Platform } from "react-native";
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
@@ -71,9 +72,19 @@ if (!supabaseUrl || !supabaseKey) {
   );
 }
 
+/**
+ * `expo-secure-store` has no web implementation — its web build is an empty
+ * stub, so calling it from a browser throws and login fails outright. The web
+ * target is only ever the dev preview (`expo start --web`), never something
+ * users get, so falling back to plain AsyncStorage there is fine: it maps to
+ * localStorage, and there is no OS keychain on the web to be "less secure"
+ * than in the first place. Native still gets the encrypted path.
+ */
+const sessionStorage = Platform.OS === "web" ? AsyncStorage : new LargeSecureStore();
+
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    storage: new LargeSecureStore(),
+    storage: sessionStorage,
     autoRefreshToken: true,
     persistSession: true,
     // Must be false on native: there is no browser URL to parse a session
