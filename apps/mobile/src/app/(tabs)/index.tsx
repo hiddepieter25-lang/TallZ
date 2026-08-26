@@ -19,14 +19,15 @@ import { ProductCard } from "@/components/ProductCard";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 /**
- * Home carries the brand and the catalog at once.
+ * Home opens with the introduction — the website's hero, brought across in
+ * full: headline, the logo mark on a black card, and the statement band.
+ * The whole catalog follows underneath.
  *
- * Two failed attempts got us here, both worth not repeating: the website's
- * homepage ported literally cost roughly three screens of scrolling before a
- * single product; stripping it back to a bare grid lost the identity
- * entirely. What's here is the compromise — the logo and one headline in a
- * fixed header of about 170pt, then product. The statement line sits at the
- * bottom of the feed instead of blocking the top of it.
+ * History worth keeping, because this screen has moved three times: the
+ * intro was stripped once when the feed was showing only 24 of 255 products
+ * and the page read as empty. The emptiness was the actual fault (an
+ * anon-only RLS policy plus a teaser slice), not the intro — so the intro is
+ * back by request, with the full catalog beneath it.
  */
 export default function Home() {
   const router = useRouter();
@@ -80,12 +81,6 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      {/* The real TallZ lockup, at native height so it stays crisp. */}
-      <View style={styles.bar}>
-        <Image source={require("../../../assets/tallz-logo.png")} style={styles.logo} contentFit="contain" />
-        <Text style={styles.count}>{products.length} items</Text>
-      </View>
-
       <FlatList
         data={products}
         keyExtractor={(p) => p.id}
@@ -101,8 +96,40 @@ export default function Home() {
         removeClippedSubviews
         ListHeaderComponent={
           <View>
+            {/* ---- Introduction ---- */}
+            <Image
+              source={require("../../../assets/tallz-logo.png")}
+              style={styles.logo}
+              contentFit="contain"
+            />
+
             <Text style={styles.eyebrow}>for women 173cm+ / men 183cm+</Text>
-            <Text style={styles.hero}>Your closet.{"\n"}One tap from yours.</Text>
+            <Text style={styles.hero}>
+              Your closet.{"\n"}One tap{"\n"}from yours.
+            </Text>
+            <Text style={styles.lede}>
+              Affordable tall-fit finds from {products.length} pieces, curated like a feed you&apos;d
+              actually want to scroll. Tap through and check out on the seller&apos;s own site —
+              TallZ just makes the match.
+            </Text>
+
+            {/* The mark held at its native 256px so it never upscales. */}
+            <View style={styles.heroCard}>
+              <Image
+                source={require("../../../assets/tallz-mark.png")}
+                style={styles.heroMark}
+                contentFit="contain"
+                tintColor={colors.onAccent}
+              />
+              <Text style={styles.heroCaption}>Cut long, worn well</Text>
+            </View>
+
+            <View style={styles.statement}>
+              <Text style={styles.statementEyebrow}>the fit problem</Text>
+              <Text style={styles.statementText}>
+                Cheap fashion shouldn&apos;t mean settling for a hem that stops an inch too soon.
+              </Text>
+            </View>
 
             {needsConsent && (
               <View style={styles.card}>
@@ -135,26 +162,12 @@ export default function Home() {
               </Pressable>
             )}
 
+            {/* ---- Catalog ---- */}
             <View style={styles.sectionHead}>
               <Text style={styles.eyebrow}>just landed</Text>
+              <Text style={styles.sectionTitle}>The newest finds</Text>
             </View>
           </View>
-        }
-        ListFooterComponent={
-          products.length > 0 ? (
-            <View style={styles.statement}>
-              <Image
-                source={require("../../../assets/tallz-mark.png")}
-                style={styles.statementMark}
-                contentFit="contain"
-                tintColor={colors.onAccent}
-              />
-              <Text style={styles.statementEyebrow}>the fit problem</Text>
-              <Text style={styles.statementText}>
-                Cheap fashion shouldn&apos;t mean settling for a hem that stops an inch too soon.
-              </Text>
-            </View>
-          ) : null
         }
         ListEmptyComponent={<Text style={styles.empty}>{error ?? "Nothing here yet."}</Text>}
       />
@@ -166,23 +179,42 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
 
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: space.lg,
-    paddingBottom: space.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  logo: { width: 96, height: 47 },
-  count: { ...type.label, color: colors.muted },
-
-  list: { paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: 0 },
+  list: { paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.xxl },
   row: { gap: space.md, marginBottom: space.xl },
 
+  logo: { width: 110, height: 54, marginBottom: space.xl },
   eyebrow: { ...type.label, color: colors.muted },
-  hero: { ...type.h1, color: colors.foreground, marginTop: space.sm },
+  hero: { ...type.hero, color: colors.foreground, marginTop: space.md },
+  lede: { ...type.body, color: colors.muted, marginTop: space.lg },
+
+  heroCard: {
+    marginTop: space.xl,
+    aspectRatio: 3 / 4,
+    borderRadius: 24,
+    backgroundColor: colors.foreground,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroMark: { width: "58%", maxWidth: 256, aspectRatio: 1 },
+  heroCaption: {
+    ...type.label,
+    color: "rgba(255,255,255,0.7)",
+    position: "absolute",
+    bottom: space.xl,
+    left: space.xl,
+  },
+
+  // Full-bleed inside a padded list: negative margins cancel the list padding.
+  statement: {
+    marginTop: space.xl,
+    marginHorizontal: -space.lg,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.xxl,
+    backgroundColor: colors.foreground,
+    gap: space.md,
+  },
+  statementEyebrow: { ...type.label, color: "rgba(255,255,255,0.6)" },
+  statementText: { ...type.h1, color: colors.onAccent },
 
   card: {
     marginTop: space.xl,
@@ -213,20 +245,15 @@ const styles = StyleSheet.create({
   },
   primaryText: { ...type.label, color: colors.onAccent },
 
-  sectionHead: { marginTop: space.xl, marginBottom: space.lg },
-
-  // Full-bleed inside a padded list: negative margins cancel the list padding.
-  statement: {
-    marginHorizontal: -space.lg,
-    paddingHorizontal: space.xl,
-    paddingVertical: space.xxl,
-    backgroundColor: colors.foreground,
-    alignItems: "flex-start",
-    gap: space.sm,
+  sectionHead: {
+    marginTop: space.xxl,
+    paddingBottom: space.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    marginBottom: space.xl,
+    gap: space.xs,
   },
-  statementMark: { width: 64, height: 64, marginBottom: space.md },
-  statementEyebrow: { ...type.label, color: "rgba(255,255,255,0.6)" },
-  statementText: { ...type.h2, color: colors.onAccent },
+  sectionTitle: { ...type.h1, color: colors.foreground },
 
   empty: { ...type.small, color: colors.muted, textAlign: "center", paddingVertical: space.xxl },
 });
