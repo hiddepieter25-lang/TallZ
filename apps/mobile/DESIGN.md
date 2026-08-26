@@ -80,12 +80,18 @@ The redirect waits on an explicit `ready` flag from the auth provider. Redirecti
 
 ## Screen structure
 
-Routes live in `apps/mobile/src/app` (expo-router, file-based):
+Routes live in `apps/mobile/src/app` (expo-router, file-based). Four tabs, mirroring what the website's nav offered:
 
-- **`login.tsx` / `signup.tsx`** — email + password. Errors go through the shared `genericAuthMessage` so raw provider text never reaches the UI. Signup shows a "check your email" state rather than appearing to do nothing when email confirmation is on.
-- **`index.tsx`** — the feed. Two-column `FlatList` of `ProductCard`, ordered by `rankProducts`. Pull-to-refresh. Carries the consent prompt (below) and, for now, the log-out control.
+- **`(tabs)/index.tsx` — Home.** The website's homepage, adapted: eyebrow, hero headline, the logo mark on a black card, the full-bleed statement band, then "The newest finds" as a two-column grid. Same shop-window rule as the web version — recent, photographed, round-robined across retailers. Carries the consent prompt and the quiz prompt.
+- **`(tabs)/search.tsx` — Search.** Text search over name and retailer, plus the quick filter chips (inseam, sleeve, gender, EU) in a horizontal rail. Filtering reuses `applyCatalogFilters`.
+- **`(tabs)/explore.tsx` — Explore.** The full-screen snap-paging swipe feed with like/skip and "Shop this", ported from the website's `/explore`.
+- **`(tabs)/account.tsx` — Account.** Email, saved quiz answers, a link back into the quiz, the consent toggle, and log out.
+- **`login.tsx` / `signup.tsx`** — outside the tabs. Errors go through the shared `genericAuthMessage` so raw provider text never reaches the UI. Signup shows a "check your email" state rather than appearing to do nothing when email confirmation is on.
+- **`onboarding.tsx`** — outside the tabs, six steps: height, proportion, swipe deck, occasions, fit, budget. Prefills from the last saved answers.
 
-Not built yet: onboarding quiz, explore/swipe feed, account screen, password reset.
+**Tabs are text-only, no icons.** `@expo/vector-icons` stays installed because expo-router depends on it internally, but nothing in this app imports it: its font assets were fragile to resolve from this monorepo layout, and uppercase tracked labels are the house style anyway.
+
+Not built yet: password reset, the photo-upload step the website's quiz had (step 7, optional there), and account deletion — that one still lives on the web admin.
 
 ## Consent
 

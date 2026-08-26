@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
 import { currencySymbol, type Product } from "@/lib/products";
-import { trackProductClick, trackProductEvent } from "@/lib/track";
+import { trackProductClick, trackProductEvent, type Placement } from "@/lib/track";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 const BOTTOMS_CATEGORIES = new Set(["Trousers", "Denim", "Cargo", "Activewear"]);
@@ -18,7 +18,15 @@ function fitLine(product: Product): string | null {
   return parts.length ? parts.join(" · ") : null;
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  placement = "feed",
+}: {
+  product: Product;
+  /** Which surface the card is on — kept on every event so the admin analytics
+   *  and the ranking signal can tell the home grid from search results. */
+  placement?: Placement;
+}) {
   const [saved, setSaved] = useState(false);
   const fit = fitLine(product);
 
@@ -29,7 +37,7 @@ export function ProductCard({ product }: { product: Product }) {
       productId: product.id,
       retailerId: product.retailerId,
       signalType: next ? "save" : "ignore",
-      placement: "feed",
+      placement,
     });
   };
 
@@ -41,7 +49,7 @@ export function ProductCard({ product }: { product: Product }) {
       productId: product.id,
       retailerId: product.retailerId,
       linkUrl: product.productUrl,
-      placement: "feed",
+      placement,
     });
     await WebBrowser.openBrowserAsync(product.productUrl);
   };
