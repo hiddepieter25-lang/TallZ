@@ -4,7 +4,7 @@
     "slug": "tallz",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/tallz-mark.png",
     "scheme": "tallz",
     "userInterfaceStyle": "light",
     "ios": {
@@ -15,9 +15,8 @@
       "package": "com.tallz.app",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/tallz-mark.png",
+        "monochromeImage": "./assets/tallz-mark.png"
       },
       "predictiveBackGestureEnabled": false
     },

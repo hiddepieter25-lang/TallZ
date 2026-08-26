@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getLatestOnboardingResponse, getProducts, rankProducts, type Product } from "@/lib/products";
@@ -18,10 +19,14 @@ import { ProductCard } from "@/components/ProductCard";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 /**
- * Home is the feed. A shopping app has to show product within a thumb's reach
- * of opening — the website's tall hero (giant headline, full-bleed logo card,
- * statement band) cost three screens of scrolling before a single item, so it
- * is deliberately not ported. What's left is a slim bar and the grid.
+ * Home carries the brand and the catalog at once.
+ *
+ * Two failed attempts got us here, both worth not repeating: the website's
+ * homepage ported literally cost roughly three screens of scrolling before a
+ * single product; stripping it back to a bare grid lost the identity
+ * entirely. What's here is the compromise — the logo and one headline in a
+ * fixed header of about 170pt, then product. The statement line sits at the
+ * bottom of the feed instead of blocking the top of it.
  */
 export default function Home() {
   const router = useRouter();
@@ -36,9 +41,6 @@ export default function Home() {
     try {
       setError(null);
       const all = await getProducts();
-      // Everything, not a teaser slice. rankProducts tiers by score and
-      // round-robins retailers within each tier, photos first — so the whole
-      // catalog is here with the strongest items at the top.
       setProducts(rankProducts(all, { swipeTags: [], occasions: [] }));
     } catch {
       setError("Couldn't load products. Pull down to try again.");
@@ -78,8 +80,9 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      {/* The real TallZ lockup, at native height so it stays crisp. */}
       <View style={styles.bar}>
-        <Text style={styles.wordmark}>TallZ</Text>
+        <Image source={require("../../../assets/tallz-logo.png")} style={styles.logo} contentFit="contain" />
         <Text style={styles.count}>{products.length} items</Text>
       </View>
 
@@ -93,43 +96,63 @@ export default function Home() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.foreground} />
         }
-        // Keeps memory sane over a few hundred cards without the user noticing.
         initialNumToRender={8}
         windowSize={7}
         removeClippedSubviews
         ListHeaderComponent={
-          needsConsent || showQuizPrompt ? (
-            <View style={styles.prompts}>
-              {needsConsent && (
-                <View style={styles.card}>
-                  <Text style={styles.cardText}>
-                    May we log which products you view and tap, to improve your feed? Links to shops
-                    work either way.
-                  </Text>
-                  <View style={styles.cardActions}>
-                    <Pressable onPress={() => choose("essential")} style={styles.ghost}>
-                      <Text style={styles.ghostText}>No thanks</Text>
-                    </Pressable>
-                    <Pressable onPress={() => choose("all")} style={styles.primary}>
-                      <Text style={styles.primaryText}>Allow</Text>
-                    </Pressable>
+          <View>
+            <Text style={styles.eyebrow}>for women 173cm+ / men 183cm+</Text>
+            <Text style={styles.hero}>Your closet.{"\n"}One tap from yours.</Text>
+
+            {needsConsent && (
+              <View style={styles.card}>
+                <Text style={styles.cardText}>
+                  May we log which products you view and tap, to improve your feed? Links to shops
+                  work either way.
+                </Text>
+                <View style={styles.cardActions}>
+                  <Pressable onPress={() => choose("essential")} style={styles.ghost}>
+                    <Text style={styles.ghostText}>No thanks</Text>
+                  </Pressable>
+                  <Pressable onPress={() => choose("all")} style={styles.primary}>
+                    <Text style={styles.primaryText}>Allow</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            {showQuizPrompt && (
+              <Pressable style={styles.card} onPress={() => router.push("/onboarding")}>
+                <Text style={styles.cardTitle}>Make this feed yours</Text>
+                <Text style={styles.cardText}>
+                  Six quick questions about your height and taste, and the order changes to match.
+                </Text>
+                <View style={styles.cardActions}>
+                  <View style={styles.primary}>
+                    <Text style={styles.primaryText}>Start</Text>
                   </View>
                 </View>
-              )}
+              </Pressable>
+            )}
 
-              {showQuizPrompt && (
-                <Pressable style={styles.card} onPress={() => router.push("/onboarding")}>
-                  <Text style={styles.cardTitle}>Make this feed yours</Text>
-                  <Text style={styles.cardText}>
-                    Six quick questions about your height and taste, and the order changes to match.
-                  </Text>
-                  <View style={styles.cardActions}>
-                    <View style={styles.primary}>
-                      <Text style={styles.primaryText}>Start</Text>
-                    </View>
-                  </View>
-                </Pressable>
-              )}
+            <View style={styles.sectionHead}>
+              <Text style={styles.eyebrow}>just landed</Text>
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          products.length > 0 ? (
+            <View style={styles.statement}>
+              <Image
+                source={require("../../../assets/tallz-mark.png")}
+                style={styles.statementMark}
+                contentFit="contain"
+                tintColor={colors.onAccent}
+              />
+              <Text style={styles.statementEyebrow}>the fit problem</Text>
+              <Text style={styles.statementText}>
+                Cheap fashion shouldn&apos;t mean settling for a hem that stops an inch too soon.
+              </Text>
             </View>
           ) : null
         }
@@ -145,21 +168,24 @@ const styles = StyleSheet.create({
 
   bar: {
     flexDirection: "row",
-    alignItems: "baseline",
+    alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: space.lg,
     paddingBottom: space.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
-  wordmark: { ...type.h2, color: colors.foreground },
+  logo: { width: 96, height: 47 },
   count: { ...type.label, color: colors.muted },
 
-  list: { paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.xxl },
+  list: { paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: 0 },
   row: { gap: space.md, marginBottom: space.xl },
 
-  prompts: { gap: space.md, marginBottom: space.xl },
+  eyebrow: { ...type.label, color: colors.muted },
+  hero: { ...type.h1, color: colors.foreground, marginTop: space.sm },
+
   card: {
+    marginTop: space.xl,
     padding: space.lg,
     borderWidth: 1,
     borderColor: colors.line,
@@ -186,6 +212,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   primaryText: { ...type.label, color: colors.onAccent },
+
+  sectionHead: { marginTop: space.xl, marginBottom: space.lg },
+
+  // Full-bleed inside a padded list: negative margins cancel the list padding.
+  statement: {
+    marginHorizontal: -space.lg,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.xxl,
+    backgroundColor: colors.foreground,
+    alignItems: "flex-start",
+    gap: space.sm,
+  },
+  statementMark: { width: 64, height: 64, marginBottom: space.md },
+  statementEyebrow: { ...type.label, color: "rgba(255,255,255,0.6)" },
+  statementText: { ...type.h2, color: colors.onAccent },
 
   empty: { ...type.small, color: colors.muted, textAlign: "center", paddingVertical: space.xxl },
 });
