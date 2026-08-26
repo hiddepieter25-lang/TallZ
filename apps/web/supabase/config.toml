@@ -1,0 +1,19 @@
+# Supabase project configuration.
+#
+# The hosted project is the source of truth today — this file exists so the
+# CLI can be pointed at it without re-entering the ref every time. Running a
+# local stack (`supabase start`) is optional and not currently part of the
+# workflow; see migrations/README.md for how schema changes are actually made.
+
+project_id = "vcitwawndwowctyvbzlc"
+
+[db]
+# Matches the hosted project (verified via `select version()`).
+major_version = 17
+
+[auth]
+enable_signup = true
+# Email confirmation is on in the hosted project — signup returns no session
+# until the link is clicked, which both the web app and the mobile app handle
+# with a "check your email" state.
+enable_confirmations = true

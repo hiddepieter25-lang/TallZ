@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { MasonryFeed, type MasonryItem } from "@/components/MasonryFeed";
+import { MasonryFeed, type MasonryItem } from "@/components/features/products/MasonryFeed";
 import { getImageDimensionsBatch } from "@/lib/image-dimensions";
-import { getProducts } from "@/lib/products";
+import { getProducts } from "@/server/queries/products";
 import { createClient } from "@/lib/supabase/server";
 
 const FALLBACK_RATIO = { width: 4, height: 5 };

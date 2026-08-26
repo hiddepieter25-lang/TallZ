@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { ExploreFeed } from "@/components/ExploreFeed";
-import { getProducts, rankProducts } from "@/lib/products";
+import { ExploreFeed } from "@/components/features/products/ExploreFeed";
+import { getProducts, rankProducts } from "@/server/queries/products";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Explore() {

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { signOutAction } from "@/app/login/actions";
-import { ChangePasswordForm } from "./ChangePasswordForm";
+import { signOutAction } from "@/server/actions/auth";
+import { ChangePasswordForm } from "@/components/features/auth/ChangePasswordForm";
 
 export default async function Account() {
   const supabase = await createClient();

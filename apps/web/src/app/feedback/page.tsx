@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { submitFeedbackAction } from "./actions";
-import { Button } from "@/components/Button";
+import { submitFeedbackAction } from "@/server/actions/feedback";
+import { Button } from "@/components/ui/Button";
 
 const TYPES = [
   { id: "general", label: "General" },

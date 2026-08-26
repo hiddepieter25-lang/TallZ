@@ -16,8 +16,8 @@ import {
   type Product,
   type Proportion,
   type StyleTag,
-} from "@/lib/products";
-import { SwipeDeck } from "@/components/SwipeDeck";
+} from "@/server/queries/products";
+import { SwipeDeck } from "@/components/features/products/SwipeDeck";
 import { createClient } from "@/lib/supabase/browser";
 
 const HEIGHT_RANGES = ["173–178cm", "179–184cm", "185–190cm", "191–196cm", "197cm+"];

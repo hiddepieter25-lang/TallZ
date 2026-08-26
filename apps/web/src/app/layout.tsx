@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Archivo } from "next/font/google";
-import { Nav } from "@/components/Nav";
-import { Footer } from "@/components/Footer";
-import { ConsentBanner } from "@/components/ConsentBanner";
+import { Nav } from "@/components/layout/Nav";
+import { Footer } from "@/components/layout/Footer";
+import { ConsentBanner } from "@/components/layout/ConsentBanner";
 import "./globals.css";
 
 // One family only, per DESIGN.md — Archivo covers headings, body, and

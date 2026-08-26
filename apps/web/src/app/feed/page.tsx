@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { MasonryFeed, type MasonryItem } from "@/components/MasonryFeed";
-import { CatalogFilterBar } from "@/components/CatalogFilterBar";
+import { MasonryFeed, type MasonryItem } from "@/components/features/products/MasonryFeed";
+import { CatalogFilterBar } from "@/components/features/products/CatalogFilterBar";
 import { getImageDimensionsBatch } from "@/lib/image-dimensions";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -12,7 +12,7 @@ import {
   paramsToAnswers,
   rankProducts,
   STYLE_TAGS,
-} from "@/lib/products";
+} from "@/server/queries/products";
 
 const FALLBACK_RATIO = { width: 4, height: 5 };
 

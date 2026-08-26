@@ -5,9 +5,9 @@ import {
   getLatestOnboardingResponse,
   getProducts,
   getRetailerNames,
-} from "@/lib/products";
-import { ProductCard } from "@/components/ProductCard";
-import { buttonClasses } from "@/components/Button";
+} from "@/server/queries/products";
+import { ProductCard } from "@/components/features/products/ProductCard";
+import { buttonClasses } from "@/components/ui/Button";
 import { inputClasses } from "@/lib/ui-classes";
 import { createClient } from "@/lib/supabase/server";
 

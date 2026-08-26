@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { deleteAccountAction } from "./actions";
+import { deleteAccountAction } from "@/server/actions/account-delete";
 
 export default async function DeleteAccount() {
   const supabase = await createClient();
