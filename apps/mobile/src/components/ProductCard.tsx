@@ -71,7 +71,12 @@ export function ProductCard({
             transition={150}
           />
         ) : (
-          <View style={[styles.image, styles.placeholder]} />
+          // ~18 of the catalog has no ingested photo yet. A bare grey box reads
+          // as a broken image, so name the category instead — it looks like a
+          // choice rather than a failure.
+          <View style={[styles.image, styles.placeholder]}>
+            <Text style={styles.placeholderText}>{product.category}</Text>
+          </View>
         )}
 
         <Pressable
@@ -122,7 +127,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.line,
   },
   image: { width: "100%", height: "100%" },
-  placeholder: { backgroundColor: colors.line },
+  placeholder: { backgroundColor: colors.line, alignItems: "center", justifyContent: "center" },
+  placeholderText: { ...type.label, color: colors.muted },
   heart: {
     position: "absolute",
     top: space.sm,
