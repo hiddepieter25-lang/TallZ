@@ -48,6 +48,18 @@ Project scope for a shopping platform for tall people. Read this before making a
 
 *(Removed 2026-08-26: a non-goal reading "No search-first UX as the primary path — it's a fallback, not the flow." It directly contradicted §4, which has said the opposite since the 2026-07-27 reversal. It was stale, not a second opinion.)*
 
+## 5a. Known Trap: RLS policies scoped to `anon` only
+
+**This has now bitten twice. Check it before debugging anything that returns empty.**
+
+Several Supabase policies were originally written `to anon` rather than `to anon, authenticated`. That was invisible while the website was the only client, because its public pages read the catalog through a *session-less* client (`@/lib/supabase`) which runs as `anon`. The mobile app uses **one session-aware client for everything**, so a signed-in user runs as `authenticated` — and any policy scoped to `anon` silently returns zero rows, with no error.
+
+Occurrences found and fixed:
+- `onboarding_responses` INSERT (2026-08-26) — logged-in users' quiz answers were rejected and the failure was swallowed; 24 stored rows, none attached to a user.
+- `products`, `product_images`, `retailers` SELECT (2026-08-26) — Home, Search and Explore all rendered "Nothing here yet" for every signed-in user.
+
+**Rule going forward:** any new policy on a table the app reads or writes must list both roles, or use `public`. When something comes back empty with no error, check `pg_policies.roles` first — this failure mode never throws.
+
 ## 6. Open Decisions — Ask, Don't Assume
 
 Research backing all of the below is in `MARKET_RESEARCH.md`. Items marked **RESOLVED** were explicit founder calls; items marked **PROPOSED** are the research-recommended default already reflected in the code, but haven't had an explicit sign-off — flag before assuming they're locked in for a real launch.
