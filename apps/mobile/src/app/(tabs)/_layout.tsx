@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { Tabs, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, fonts, space, MIN_TAP } from "@/lib/theme";
 
 /**
@@ -16,8 +17,18 @@ import { colors, fonts, space, MIN_TAP } from "@/lib/theme";
  * an icon set is a lot of dependency for a system that is deliberately austere —
  * uppercase tracked labels are the house style (see DESIGN.md).
  */
+/**
+ * Room for the logo, measured from the bottom of the status bar. The header's
+ * `height` is its *total* height — react-navigation renders a spacer of
+ * headerStatusBarHeight inside it — so a fixed number would leave a phone with
+ * a notch roughly 47pt short and clip the logo. Adding the inset keeps the
+ * visible area the same on every device.
+ */
+const HEADER_CONTENT_HEIGHT = 76;
+
 export default function TabsLayout() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -25,7 +36,13 @@ export default function TabsLayout() {
         headerShown: true,
         headerTitleAlign: "center",
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: colors.background },
+        // Taller than the default 44pt (iOS) / 56pt (Android): the logo is the
+        // only thing in here, so the header is sized to it rather than the
+        // other way round.
+        headerStyle: {
+          backgroundColor: colors.background,
+          height: insets.top + HEADER_CONTENT_HEIGHT,
+        },
         // The whole header is the logo and nothing else — no title text, no
         // buttons. It is a way back to the introduction, not a toolbar.
         headerTitle: () => (
@@ -71,5 +88,8 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   // Height is the tap target; the logo itself is smaller and centred in it.
   logoTap: { minHeight: MIN_TAP, justifyContent: "center", paddingHorizontal: space.md },
-  logo: { width: 82, height: 24 },
+  // tallz-logo.png is 641x315, so 2.03:1. The box has to match that ratio or
+  // contentFit="contain" shrinks the logo to whichever side runs out first —
+  // an 82x24 box rendered it at 49pt wide, roughly half its intended size.
+  logo: { width: 122, height: 60 },
 });
