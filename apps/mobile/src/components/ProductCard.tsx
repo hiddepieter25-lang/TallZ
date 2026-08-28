@@ -54,61 +54,67 @@ export function ProductCard({
     await WebBrowser.openBrowserAsync(product.productUrl);
   };
 
+  // The card and the heart are siblings, not nested. A Pressable inside a
+  // Pressable leaves it ambiguous which one a tap belongs to, and on web it
+  // renders a <button> inside a <button>, which is invalid HTML. The heart is
+  // positioned over the image instead, so both stay independently tappable.
   return (
-    <Pressable
-      onPress={openRetailer}
-      disabled={!product.productUrl}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-      accessibilityRole="button"
-      accessibilityLabel={`${product.name} by ${product.retailer}. Opens the retailer's site.`}
-    >
-      <View style={styles.imageWrap}>
-        {product.imageUrl ? (
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={styles.image}
-            contentFit="cover"
-            transition={150}
-          />
-        ) : (
-          // ~18 of the catalog has no ingested photo yet. A bare grey box reads
-          // as a broken image, so name the category instead — it looks like a
-          // choice rather than a failure.
-          <View style={[styles.image, styles.placeholder]}>
-            <Text style={styles.placeholderText}>{product.category}</Text>
-          </View>
-        )}
+    <View style={styles.card}>
+      <Pressable
+        onPress={openRetailer}
+        disabled={!product.productUrl}
+        style={({ pressed }) => (pressed ? styles.pressed : null)}
+        accessibilityRole="button"
+        accessibilityLabel={`${product.name} by ${product.retailer}. Opens the retailer's site.`}
+      >
+        <View style={styles.imageWrap}>
+          {product.imageUrl ? (
+            <Image
+              source={{ uri: product.imageUrl }}
+              style={styles.image}
+              contentFit="cover"
+              transition={150}
+            />
+          ) : (
+            // ~18 of the catalog has no ingested photo yet. A bare grey box reads
+            // as a broken image, so name the category instead — it looks like a
+            // choice rather than a failure.
+            <View style={[styles.image, styles.placeholder]}>
+              <Text style={styles.placeholderText}>{product.category}</Text>
+            </View>
+          )}
 
-        <Pressable
-          onPress={toggleSave}
-          hitSlop={10}
-          style={[styles.heart, saved && styles.heartOn]}
-          accessibilityRole="button"
-          accessibilityLabel={saved ? "Remove from saved" : "Save"}
-        >
-          <Text style={[styles.heartIcon, saved && styles.heartIconOn]}>♥</Text>
-        </Pressable>
+          {fit && (
+            <View style={styles.fitBadge}>
+              <Text style={styles.fitText}>{fit}</Text>
+            </View>
+          )}
+        </View>
 
-        {fit && (
-          <View style={styles.fitBadge}>
-            <Text style={styles.fitText}>{fit}</Text>
-          </View>
-        )}
-      </View>
+        <View style={styles.meta}>
+          <Text style={styles.brand} numberOfLines={1}>
+            {product.retailer}
+          </Text>
+          <Text style={styles.name} numberOfLines={2}>
+            {product.name}
+          </Text>
+          <Text style={styles.price}>
+            {currencySymbol(product.currency)}
+            {product.price}
+          </Text>
+        </View>
+      </Pressable>
 
-      <View style={styles.meta}>
-        <Text style={styles.brand} numberOfLines={1}>
-          {product.retailer}
-        </Text>
-        <Text style={styles.name} numberOfLines={2}>
-          {product.name}
-        </Text>
-        <Text style={styles.price}>
-          {currencySymbol(product.currency)}
-          {product.price}
-        </Text>
-      </View>
-    </Pressable>
+      <Pressable
+        onPress={toggleSave}
+        hitSlop={10}
+        style={[styles.heart, saved && styles.heartOn]}
+        accessibilityRole="button"
+        accessibilityLabel={saved ? "Remove from saved" : "Save"}
+      >
+        <Text style={[styles.heartIcon, saved && styles.heartIconOn]}>♥</Text>
+      </Pressable>
+    </View>
   );
 }
 
