@@ -8,6 +8,7 @@ import {
   diversifyByRetailer,
   paramsToAnswers,
   rankProducts,
+  selectTopPicks,
   swatchColor,
   type Product,
   type QuizAnswers,
@@ -359,5 +360,139 @@ describe("small helpers", () => {
 
   it("always returns a colour from the palette, even for an empty seed", () => {
     expect(swatchColor("")).toMatch(/^#[0-9A-F]{6}$/i);
+  });
+});
+
+describe("selectTopPicks", () => {
+  it("leads with a genuinely popular product", () => {
+    const popular = product({ id: "popular", retailer: "A" });
+    const rest = [
+      product({ id: "b", retailer: "B" }),
+      product({ id: "c", retailer: "C" }),
+      product({ id: "d", retailer: "D" }),
+    ];
+
+    const picks = selectTopPicks([...rest, popular], [{ productId: "popular", score: 5 }]);
+
+    expect(picks[0].id).toBe("popular");
+  });
+
+  it("ignores a score too weak to mean anything", () => {
+    // One stray tap is not a best seller. Two products, one with score 1 —
+    // it must not jump the queue purely for having been touched once.
+    const barelyTouched = product({ id: "barely", retailer: "A", createdAt: "2020-01-01T00:00:00Z" });
+    const newer = product({ id: "newer", retailer: "B", createdAt: "2026-01-01T00:00:00Z" });
+
+    const picks = selectTopPicks([barelyTouched, newer], [{ productId: "barely", score: 1 }], 1);
+
+    expect(picks[0].id).toBe("newer");
+  });
+
+  it("never shows a product without a photo, however popular", () => {
+    // The two highest-scoring products in the real database have no image.
+    const noPhoto = product({ id: "no-photo", imageUrl: null });
+    const withPhoto = product({ id: "with-photo", retailer: "B" });
+
+    const picks = selectTopPicks([noPhoto, withPhoto], [{ productId: "no-photo", score: 99 }]);
+
+    expect(picks.map((p) => p.id)).not.toContain("no-photo");
+  });
+
+  it("takes only one pick per retailer when there are alternatives", () => {
+    // Same blazer in two colours from one brand — showing both wastes half the
+    // shop window on one product. Retailers C and D exist, so there is no
+    // excuse to fall back on the second colourway.
+    const a1 = product({ id: "a1", retailer: "A" });
+    const a2 = product({ id: "a2", retailer: "A" });
+    const others = ["B", "C", "D"].map((r) => product({ id: `p${r}`, retailer: r }));
+
+    const picks = selectTopPicks(
+      [a1, a2, ...others],
+      [
+        { productId: "a1", score: 5 },
+        { productId: "a2", score: 4 },
+      ]
+    );
+
+    expect(picks).toHaveLength(4);
+    expect(picks.filter((p) => p.retailer === "A")).toHaveLength(1);
+  });
+
+  it("spreads across retailers even when one dominates the newest arrivals", () => {
+    // The real failure this guards: one weekly sync writes ~89 products with
+    // near-identical timestamps, so "the newest N" is almost entirely one shop.
+    // Taken naively, the home page showed Westport twice.
+    const flood = Array.from({ length: 30 }, (_, i) =>
+      product({ id: `flood${i}`, retailer: "Westport", createdAt: "2026-08-28T00:00:00Z" })
+    );
+    const older = ["A", "B", "C"].map((r) =>
+      product({ id: `old${r}`, retailer: r, createdAt: "2026-01-01T00:00:00Z" })
+    );
+
+    const picks = selectTopPicks([...flood, ...older], []);
+
+    expect(picks).toHaveLength(4);
+    expect(new Set(picks.map((p) => p.retailer)).size).toBe(4);
+  });
+
+  it("repeats a retailer only when the catalog leaves no choice", () => {
+    // Deliberate: with just three photographed products across two retailers,
+    // showing three beats withholding one for the sake of a rule.
+    const products = [
+      product({ id: "a1", retailer: "A" }),
+      product({ id: "a2", retailer: "A" }),
+      product({ id: "b1", retailer: "B" }),
+    ];
+
+    expect(selectTopPicks(products, [])).toHaveLength(3);
+  });
+
+  it("tops up with recent arrivals when popularity runs out", () => {
+    const popular = product({ id: "popular", retailer: "A" });
+    const others = ["b", "c", "d", "e"].map((id) =>
+      product({ id, retailer: id.toUpperCase() })
+    );
+
+    const picks = selectTopPicks([...others, popular], [{ productId: "popular", score: 5 }]);
+
+    expect(picks).toHaveLength(4);
+    expect(picks[0].id).toBe("popular");
+  });
+
+  it("works with no popularity data at all", () => {
+    const products = ["a", "b", "c", "d", "e"].map((id) =>
+      product({ id, retailer: id.toUpperCase() })
+    );
+
+    expect(selectTopPicks(products, [])).toHaveLength(4);
+  });
+
+  it("never repeats a product that was already picked", () => {
+    const popular = product({ id: "popular", retailer: "A" });
+    const others = ["b", "c"].map((id) => product({ id, retailer: id.toUpperCase() }));
+
+    const picks = selectTopPicks([...others, popular], [{ productId: "popular", score: 9 }]);
+
+    expect(new Set(picks.map((p) => p.id)).size).toBe(picks.length);
+  });
+
+  it("returns fewer than four rather than inventing filler", () => {
+    const only = [product({ id: "only" })];
+
+    expect(selectTopPicks(only, [])).toHaveLength(1);
+  });
+
+  it("returns nothing when no product has a photo", () => {
+    const products = [product({ imageUrl: null }), product({ imageUrl: null })];
+
+    expect(selectTopPicks(products, [])).toEqual([]);
+  });
+
+  it("ignores a score for a product that is no longer in the catalog", () => {
+    const present = product({ id: "present", retailer: "B" });
+
+    const picks = selectTopPicks([present], [{ productId: "deleted", score: 9 }]);
+
+    expect(picks.map((p) => p.id)).toEqual(["present"]);
   });
 });

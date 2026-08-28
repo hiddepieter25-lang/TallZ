@@ -56,7 +56,7 @@ export default function Search() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <View style={styles.head}>
         <Text style={styles.eyebrow}>find your fit</Text>
         <TextInput

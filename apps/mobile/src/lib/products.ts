@@ -394,6 +394,123 @@ export function diversifyByRetailer(products: Product[]): Product[] {
   return result;
 }
 
+/** One popularity score per product, from the `top_products` RPC. */
+export interface ProductScore {
+  productId: string;
+  score: number;
+}
+
+/**
+ * Below this, a score is noise rather than a signal. With a handful of taps in
+ * the database, "most clicked" is really "whichever item someone opened once",
+ * so anything weaker gets ignored and the fallback fills the slot instead.
+ */
+const MIN_POPULAR_SCORE = 3;
+
+/**
+ * The home page's picks: genuinely popular products first, topped up with new
+ * arrivals when there isn't enough real signal yet.
+ *
+ * Three rules, each from something that actually goes wrong without it:
+ *
+ * - **Must have a photo.** The two highest-scoring products right now are
+ *   hand-entered placeholders with no image, and a grey box is the worst thing
+ *   to lead a shop window with. The website filtered on this for the same reason.
+ * - **One per retailer among the popular picks.** The next two are the same
+ *   blazer in two colours; four near-identical items doesn't show any range.
+ * - **Topped up by recency, not padding.** Same recipe the website used —
+ *   photographed, recent, spread across retailers.
+ *
+ * Today that means roughly one popular pick and three new arrivals. As real
+ * traffic accumulates the balance tips on its own, with nothing to change here.
+ */
+export function selectTopPicks(
+  products: Product[],
+  scores: ProductScore[],
+  count = 4
+): Product[] {
+  const withPhoto = products.filter((p) => p.imageUrl);
+  const byId = new Map(withPhoto.map((p) => [p.id, p]));
+
+  const picked: Product[] = [];
+  const pickedIds = new Set<string>();
+  const seenRetailers = new Set<string>();
+
+  for (const { productId, score } of [...scores].sort((a, b) => b.score - a.score)) {
+    if (picked.length >= count) break;
+    if (score < MIN_POPULAR_SCORE) continue;
+    const product = byId.get(productId);
+    if (!product || seenRetailers.has(product.retailer)) continue;
+    picked.push(product);
+    pickedIds.add(product.id);
+    seenRetailers.add(product.retailer);
+  }
+
+  if (picked.length < count) {
+    // Sorted newest-first and then round-robined, so the queue is each
+    // retailer's newest in turn. The website took a fixed 24-item window first,
+    // which worked at its catalog size; at 344 products a single sync writes ~89
+    // rows with near-identical timestamps, so that window is now mostly one
+    // shop — and the top-up handed back two items from it.
+    const spread = diversifyByRetailer(
+      [...withPhoto].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    );
+
+    // Two passes. The first keeps the one-per-retailer rule, so topping up
+    // can't quietly re-add the second colourway that the popular pass just
+    // skipped. The second allows a repeat, but only when the catalog doesn't
+    // hold four distinct retailers with photographed stock — with ten live
+    // retailers that never runs today, and three varied picks would beat four
+    // where two are the same brand anyway.
+    for (const allowRepeatRetailer of [false, true]) {
+      for (const product of spread) {
+        if (picked.length >= count) break;
+        if (pickedIds.has(product.id)) continue;
+        if (!allowRepeatRetailer && seenRetailers.has(product.retailer)) continue;
+        picked.push(product);
+        pickedIds.add(product.id);
+        seenRetailers.add(product.retailer);
+      }
+    }
+  }
+
+  return picked;
+}
+
+/**
+ * Popularity has to come from an RPC: `product_events` is admin-only to read,
+ * and RLS answers with zero rows rather than an error, so querying it here
+ * would silently return nothing. The function exposes counts only — see the
+ * migration for why that is safe to call with the public key.
+ */
+export async function getTopPicks(
+  count = 4
+): Promise<{ picks: Product[]; catalogSize: number }> {
+  const products = await getProducts();
+
+  // Returned alongside the picks rather than counted separately: the home page
+  // quotes the catalog size in its opening line, and the products are already
+  // in hand here. A second round trip for a number we have would be waste.
+  const catalogSize = products.length;
+
+  const { data, error } = await supabase.rpc("top_products", { p_limit: 12 });
+  if (error) {
+    // Popularity is an enhancement, not a requirement. Losing it should cost
+    // the ranking, not the shop window.
+    console.error("Couldn't read product popularity:", error.message);
+    return { picks: selectTopPicks(products, [], count), catalogSize };
+  }
+
+  const scores: ProductScore[] = (data ?? []).map(
+    (row: { product_id: string; score: number }) => ({
+      productId: row.product_id,
+      score: Number(row.score),
+    })
+  );
+
+  return { picks: selectTopPicks(products, scores, count), catalogSize };
+}
+
 // Flat grayscale ramp (no warm tint, no gradient) — matches DESIGN.md's
 // high-contrast poster system so a placeholder reads as deliberate, not a bug.
 const SWATCH_PALETTE = ["#ECECEC", "#D6D6D6", "#B8B8B8", "#949494", "#6B6B6B", "#3A3A3A"];

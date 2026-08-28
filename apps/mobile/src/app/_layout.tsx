@@ -19,7 +19,7 @@ import { colors } from "@/lib/theme";
 const AUTH_SCREENS = ["login", "signup", "forgot-password"];
 
 /**
- * Sends signed-out users to the login screen and signed-in users away from it.
+ * Sends signed-out users to the introduction and signed-in users into the app.
  * Waits for `ready` so a returning user with a stored session isn't bounced
  * out during the moment before that session has been read from SecureStore.
  */
@@ -27,23 +27,41 @@ function useProtectedRoute() {
   const { session, ready } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const settledInitialRoute = useRef(false);
 
   useEffect(() => {
     if (!ready) return;
 
+    // The root route "/" has no segments at all, unlike every other screen.
     const route = segments[0];
+    const atIntroduction = route === undefined;
 
-    // reset-password is the one screen that belongs to neither state: it runs
-    // on the short-lived session the recovery link creates, so redirecting a
-    // "logged in" user away from it would slam the door on the way in.
-    if (route === "reset-password") return;
+    // A returning user shouldn't open onto the introduction — they have read it.
+    // Once only: after this, "/" is somewhere you go on purpose, which is
+    // exactly what tapping the logo does, so repeating this would trap them.
+    if (!settledInitialRoute.current) {
+      settledInitialRoute.current = true;
+      if (session && atIntroduction) {
+        router.replace("/search");
+        return;
+      }
+    }
 
-    const inAuthScreens = AUTH_SCREENS.includes(route as string);
+    // Two screens belong to neither state. The introduction is the shop window
+    // for a visitor without an account and the logo's destination for one with
+    // it; reset-password runs on the short-lived session a recovery link
+    // creates, so "signed in users don't belong on auth screens" would slam
+    // the door on the way in.
+    if (atIntroduction || route === "reset-password") return;
+
+    const inAuthScreens = AUTH_SCREENS.includes(route);
 
     if (!session && !inAuthScreens) {
-      router.replace("/login");
-    } else if (session && inAuthScreens) {
+      // Not to /login: someone arriving without an account should meet the
+      // introduction first and decide, rather than face a password box.
       router.replace("/");
+    } else if (session && inAuthScreens) {
+      router.replace("/search");
     }
   }, [session, ready, segments, router]);
 }

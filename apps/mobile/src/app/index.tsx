@@ -9,9 +9,9 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getLatestOnboardingResponse, getProducts, rankProducts, type Product } from "@/lib/products";
+import { getLatestOnboardingResponse, getTopPicks, type Product } from "@/lib/products";
 import { getConsent, setConsent } from "@/lib/consent";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -19,20 +19,23 @@ import { ProductCard } from "@/components/ProductCard";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 /**
- * Home opens with the introduction — the website's hero, brought across in
- * full: headline, the logo mark on a black card, and the statement band.
- * The whole catalog follows underneath.
+ * The introduction: what TallZ is, and — for a visitor without one yet — an
+ * account.
  *
- * History worth keeping, because this screen has moved three times: the
- * intro was stripped once when the feed was showing only 24 of 255 products
- * and the page read as empty. The emptiness was the actual fault (an
- * anon-only RLS policy plus a teaser slice), not the intro — so the intro is
- * back by request, with the full catalog beneath it.
+ * Deliberately not a tab and not the landing screen. A first visit opens here
+ * because nothing is more useful to someone who has never seen the app; after
+ * that the tab bar's logo is the way back, and signing in lands on Search.
+ *
+ * Four products, not the catalog. The whole catalog lived here once, which made
+ * this a feed with an essay stapled on top rather than a shop window. Four is
+ * what the website showed, and for the same reason: enough to prove there is
+ * real stock behind the words, few enough that the words still get read.
  */
 export default function Home() {
   const router = useRouter();
   const { session } = useAuth();
-  const [products, setProducts] = useState<Product[] | null>(null);
+  const [picks, setPicks] = useState<Product[] | null>(null);
+  const [catalogSize, setCatalogSize] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [needsConsent, setNeedsConsent] = useState(false);
@@ -41,11 +44,12 @@ export default function Home() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const all = await getProducts();
-      setProducts(rankProducts(all, { swipeTags: [], occasions: [] }));
+      const { picks: chosen, catalogSize: size } = await getTopPicks(4);
+      setPicks(chosen);
+      setCatalogSize(size);
     } catch {
       setError("Couldn't load products. Pull down to try again.");
-      setProducts([]);
+      setPicks([]);
     }
   }, []);
 
@@ -71,7 +75,7 @@ export default function Home() {
     setNeedsConsent(false);
   };
 
-  if (products === null) {
+  if (picks === null) {
     return (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator color={colors.foreground} />
@@ -82,7 +86,7 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <FlatList
-        data={products}
+        data={picks}
         keyExtractor={(p) => p.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
@@ -91,14 +95,11 @@ export default function Home() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.foreground} />
         }
-        initialNumToRender={8}
-        windowSize={7}
-        removeClippedSubviews
         ListHeaderComponent={
           <View>
             {/* ---- Introduction ---- */}
             <Image
-              source={require("../../../assets/tallz-logo.png")}
+              source={require("../../assets/tallz-logo.png")}
               style={styles.logo}
               contentFit="contain"
             />
@@ -108,15 +109,35 @@ export default function Home() {
               Your closet.{"\n"}One tap{"\n"}from yours.
             </Text>
             <Text style={styles.lede}>
-              Affordable tall-fit finds from {products.length} pieces, curated like a feed you&apos;d
+              Affordable tall-fit finds from {catalogSize} pieces, curated like a feed you&apos;d
               actually want to scroll. Tap through and check out on the seller&apos;s own site —
               TallZ just makes the match.
             </Text>
 
+            {/* The point of this screen for anyone who hasn't signed up. For
+                anyone who has, the same slot is simply the way back in. */}
+            {session ? (
+              <Pressable style={styles.cta} onPress={() => router.replace("/search")}>
+                <Text style={styles.ctaText}>Browse the catalog</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.ctaBlock}>
+                <Pressable style={styles.cta} onPress={() => router.push("/signup")}>
+                  <Text style={styles.ctaText}>Create account</Text>
+                </Pressable>
+                <View style={styles.ctaFooter}>
+                  <Text style={styles.ctaFooterText}>Already have one? </Text>
+                  <Link href="/login" style={styles.ctaLink}>
+                    Log in
+                  </Link>
+                </View>
+              </View>
+            )}
+
             {/* The mark held at its native 256px so it never upscales. */}
             <View style={styles.heroCard}>
               <Image
-                source={require("../../../assets/tallz-mark.png")}
+                source={require("../../assets/tallz-mark.png")}
                 style={styles.heroMark}
                 contentFit="contain"
                 tintColor={colors.onAccent}
@@ -162,10 +183,21 @@ export default function Home() {
               </Pressable>
             )}
 
-            {/* ---- Catalog ---- */}
+            {/* ---- The four picks ---- */}
             <View style={styles.sectionHead}>
-              <Text style={styles.eyebrow}>just landed</Text>
-              <Text style={styles.sectionTitle}>The newest finds</Text>
+              <View style={styles.sectionHeadRow}>
+                <View style={styles.sectionHeadText}>
+                  {/* Neutral on purpose. These are the most-tapped items once
+                      there is enough traffic to mean it, and the newest arrivals
+                      until then — so neither "just landed" nor "best sellers"
+                      would stay true. */}
+                  <Text style={styles.eyebrow}>the picks</Text>
+                  <Text style={styles.sectionTitle}>Worth a look</Text>
+                </View>
+                <Link href="/search" style={styles.viewAll}>
+                  View all
+                </Link>
+              </View>
             </View>
           </View>
         }
@@ -186,6 +218,21 @@ const styles = StyleSheet.create({
   eyebrow: { ...type.label, color: colors.muted },
   hero: { ...type.hero, color: colors.foreground, marginTop: space.md },
   lede: { ...type.body, color: colors.muted, marginTop: space.lg },
+
+  ctaBlock: { marginTop: space.xl, gap: space.md },
+  cta: {
+    marginTop: space.xl,
+    minHeight: MIN_TAP,
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaText: { ...type.label, color: colors.onAccent },
+  ctaFooter: { flexDirection: "row", justifyContent: "center" },
+  ctaFooterText: { ...type.small, color: colors.muted },
+  ctaLink: { ...type.small, color: colors.foreground, textDecorationLine: "underline" },
 
   heroCard: {
     marginTop: space.xl,
@@ -251,9 +298,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
     marginBottom: space.xl,
-    gap: space.xs,
   },
+  sectionHeadRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
+  sectionHeadText: { gap: space.xs, flexShrink: 1 },
   sectionTitle: { ...type.h1, color: colors.foreground },
+  viewAll: { ...type.label, color: colors.foreground, paddingBottom: space.xs },
 
   empty: { ...type.small, color: colors.muted, textAlign: "center", paddingVertical: space.xxl },
 });

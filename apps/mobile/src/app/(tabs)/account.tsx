@@ -57,7 +57,7 @@ export default function Account() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.eyebrow}>Account</Text>
         <Text style={styles.title}>your account</Text>
