@@ -34,7 +34,14 @@ const MAX_NEW_PER_RUN = 20;
 async function syncRetailer(supabase, retailer) {
   const result = await fetchProducts(retailer.url, retailer.path, FETCH_LIMIT);
   if (!result.ok) {
-    throw new Error(`fetch failed: HTTP ${result.status} — ${result.reason}`);
+    const err = new Error(`fetch failed: HTTP ${result.status} — ${result.reason}`);
+    // Nine of the originally hand-entered retailers (ASOS, Gap, Levi's, …)
+    // don't run on Shopify and never will, so there is no /products.json to
+    // read. Failing the whole run over that made every week look broken even
+    // when the ten real feeds synced fine. Still attempted every run — if one
+    // ever moves to Shopify it starts working on its own.
+    err.notShopify = Boolean(result.notShopify);
+    throw err;
   }
 
   const candidates = buildCandidates(result.products, {
@@ -74,8 +81,8 @@ async function main() {
         errors: null,
       });
     } catch (err) {
-      hadFailure = true;
-      console.error(`  FAILED: ${err.message}`);
+      if (!err.notShopify) hadFailure = true;
+      console.error(`  ${err.notShopify ? "SKIPPED (not a Shopify store)" : "FAILED"}: ${err.message}`);
       // Supabase/Postgrest errors carry extra fields that err.message alone
       // drops — print them too so a follow-up failure doesn't need another
       // round of guessing.
@@ -87,7 +94,7 @@ async function main() {
         await logIngestionJob(supabase, {
           retailerId: retailer.id,
           sourceType: SOURCE_TYPE,
-          status: "error",
+          status: err.notShopify ? "skipped" : "error",
           itemsIngested: 0,
           errors: err.message,
         });

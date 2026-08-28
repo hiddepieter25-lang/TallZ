@@ -118,10 +118,10 @@ export async function fetchProducts(baseUrl, path, limit) {
   try {
     json = JSON.parse(text);
   } catch {
-    return { ok: false, status: res.status, feedUrl, reason: "not JSON — not a Shopify feed (or blocked)" };
+    return { ok: false, status: res.status, feedUrl, notShopify: true, reason: "not JSON — not a Shopify feed (or blocked)" };
   }
   if (!Array.isArray(json.products)) {
-    return { ok: false, status: res.status, feedUrl, reason: "JSON but no products[] array" };
+    return { ok: false, status: res.status, feedUrl, notShopify: true, reason: "JSON but no products[] array" };
   }
   return { ok: true, status: res.status, feedUrl, products: json.products };
 }

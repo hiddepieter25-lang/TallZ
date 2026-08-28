@@ -2,9 +2,14 @@ name: Sync retailer catalogs
 
 on:
   schedule:
-    # Every Monday at 03:00 UTC — low-traffic hours, once a week per the
-    # catalog plan (re-sync existing Shopify retailers, not onboard new ones).
-    - cron: "0 3 * * 1"
+    # Mondays and Thursdays at 03:00 UTC. Twice a week rather than once for a
+    # reason that has nothing to do with catalog freshness: this Supabase
+    # project is on the free plan, which pauses after 7 days without activity.
+    # A weekly job sits exactly on that boundary — and lost. Between 2026-08-03
+    # and 2026-08-26 three scheduled runs in a row reached a sleeping database
+    # and wrote nothing at all, with no rows in ingestion_jobs to show for it.
+    # Two runs a week keeps the gap at 3-4 days, safely inside the window.
+    - cron: "0 3 * * 1,4"
   workflow_dispatch: {} # allows a manual "Run workflow" click for testing
 
 jobs:
