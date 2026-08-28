@@ -11,9 +11,7 @@
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
     "db:types": "npx supabase gen types typescript --local > src/types/supabase.ts",
-    "db:push": "npx supabase db push",
-    "test": "vitest",
-    "test:ui": "vitest --ui"
+    "db:push": "npx supabase db push"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.1",
