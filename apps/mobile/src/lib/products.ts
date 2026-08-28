@@ -1,8 +1,10 @@
-// Ported from apps/web/src/lib/products.ts. This is the shared domain core —
-// product types, the quiz vocabulary, and the ranking algorithm. It is
-// deliberately a copy for now: the web app's public routes (the only thing
-// that used ranking) are being retired, after which this becomes the single
-// copy. Until then, any change to ranking must be made in both files.
+// The shared domain core — product types, the quiz vocabulary, and the ranking
+// algorithm. Originally ported from the web app.
+//
+// As of 2026-08-28 this is the only copy that ranks anything: the web's public
+// routes were deleted. apps/web/src/server/queries/products.ts still exists,
+// but only for the types and queries the admin panel reads — its ranking code
+// is now dead weight there. Ranking changes belong here.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 

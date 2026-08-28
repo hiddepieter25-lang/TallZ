@@ -7,7 +7,7 @@ A discovery-first marketplace aggregating clothing from external retailers for t
 npm workspaces monorepo:
 
 - `apps/mobile` — **the product.** Expo SDK 57 + expo-router + React Native (TypeScript).
-- `apps/web` — Next.js. Being reduced to the **admin panel** (catalog, retailers, analytics, algorithm) plus `/privacy`, which both app stores require as a public URL. Its public pages are retired.
+- `apps/web` — Next.js. The **admin panel** (catalog, retailers, analytics, algorithm), plus three things that have to stay reachable on the open web: `/privacy` (both app stores require a public privacy-policy URL), and `/auth/callback` + `/reset-password` (where Supabase's signup-confirmation and password-reset emails land, because the app can't receive an https link yet). The public storefront pages were deleted 2026-08-28 — the app is the storefront now. `/` redirects to `/admin`.
 - `scripts/` — the retailer ingestion jobs, run on a schedule by GitHub Actions.
 
 Both apps talk to the same Supabase project and the same RLS policies. Design rules live in [apps/mobile/DESIGN.md](./apps/mobile/DESIGN.md); the tokens are implemented in `apps/mobile/src/lib/theme.ts`.
