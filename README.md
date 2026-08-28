@@ -28,6 +28,21 @@ Then scan the QR code with **Expo Go** on a phone. `npx expo start --web` render
 
 Needs `apps/mobile/.env.local` with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Expo only reads env vars at startup, so restart the dev server after changing them.
 
+> **`Unable to resolve module <something>` after an `npm install`?**
+>
+> Metro caches where every module lives. Installing or removing a package while
+> the dev server is running replaces files underneath it, and the cache still
+> points at the old layout — so it reports a module as missing that is sitting
+> right there on disk. It is not a broken dependency and adding the package by
+> hand will not help.
+>
+> ```bash
+> npm run start:clear --workspace=apps/mobile
+> ```
+>
+> Hit this on 2026-08-28 with `nanoid/non-secure` after adding vitest. Node
+> resolved the module fine the whole time; only Metro's cache disagreed.
+
 **Web (admin):**
 
 ```bash
