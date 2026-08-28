@@ -9,53 +9,63 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Linking from "expo-linking";
 import { supabase } from "@/lib/supabase";
 import { genericAuthMessage } from "@/lib/auth-errors";
+import { useAuth } from "@/lib/auth";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
-export default function Signup() {
-  const [email, setEmail] = useState("");
+/**
+ * Where a password-recovery link lands.
+ *
+ * By the time this renders, the deep-link handler in `_layout.tsx` has already
+ * turned the link into a real session — that session is what authorises the
+ * update below. The screen is therefore reachable while signed in, which is why
+ * `useProtectedRoute` exempts it.
+ */
+export default function ResetPassword() {
+  const { linkError } = useLocalSearchParams<{ linkError?: string }>();
+  const { session } = useAuth();
+  const router = useRouter();
+
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
 
-  const signUp = async () => {
+  const save = async () => {
+    if (password !== confirm) {
+      setError("The two passwords don't match.");
+      return;
+    }
     setPending(true);
     setError(null);
-    // Without emailRedirectTo the confirmation link follows the project-wide
-    // Site URL, which pointed at the web app that no longer exists. createURL
-    // resolves to tallz:// in a real build and to the Expo Go / localhost
-    // equivalent while developing.
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: Linking.createURL("/") },
-    });
-    if (signUpError) {
-      setError(genericAuthMessage(signUpError.message));
-    } else if (!data.session) {
-      // Email confirmation is on, so there's no session yet — say so rather
-      // than leaving the user on a screen that looks like it did nothing.
-      setSent(true);
-    }
+    const { error: updateError } = await supabase.auth.updateUser({ password });
     setPending(false);
+    if (updateError) {
+      setError(genericAuthMessage(updateError.message));
+      return;
+    }
+    // The recovery session is a real session, so they are already logged in.
+    router.replace("/");
   };
 
-  if (sent) {
+  // Either the link was expired/reused, or this screen was opened directly.
+  // Both leave nothing to update, and both are fixed the same way.
+  if (linkError || !session) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Almost there</Text>
-          <Text style={styles.title}>check your email</Text>
+          <Text style={styles.eyebrow}>Account</Text>
+          <Text style={styles.title}>link expired</Text>
           <Text style={styles.body}>
-            We sent a confirmation link to {email}. Open it, then come back and log in.
+            {linkError
+              ? "That reset link is no longer valid — they can only be used once, and they expire."
+              : "Open this screen from the link in your email, so we know which account to change."}
           </Text>
-          <Link href="/login" style={styles.link}>
-            Back to log in
+          <Link href="/forgot-password" style={styles.link}>
+            Send a new link
           </Link>
         </View>
       </SafeAreaView>
@@ -70,24 +80,25 @@ export default function Signup() {
       >
         <View style={styles.inner}>
           <Text style={styles.eyebrow}>Account</Text>
-          <Text style={styles.title}>create account</Text>
+          <Text style={styles.title}>new password</Text>
 
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email"
-            placeholderTextColor={colors.muted}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            style={styles.input}
-          />
           <TextInput
             value={password}
             onChangeText={setPassword}
-            placeholder="Password (min. 8 characters)"
+            placeholder="New password"
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
+            autoComplete="new-password"
+            secureTextEntry
+            style={styles.input}
+          />
+          <TextInput
+            value={confirm}
+            onChangeText={setConfirm}
+            placeholder="Repeat new password"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="none"
+            autoComplete="new-password"
             secureTextEntry
             style={styles.input}
           />
@@ -95,27 +106,20 @@ export default function Signup() {
           {error && <Text style={styles.error}>{error}</Text>}
 
           <Pressable
-            onPress={signUp}
-            disabled={pending || !email || password.length < 8}
+            onPress={save}
+            disabled={pending || !password || !confirm}
             style={({ pressed }) => [
               styles.button,
-              (pending || !email || password.length < 8) && styles.buttonDisabled,
+              (pending || !password || !confirm) && styles.buttonDisabled,
               pressed && styles.buttonPressed,
             ]}
           >
             {pending ? (
               <ActivityIndicator color={colors.onAccent} />
             ) : (
-              <Text style={styles.buttonText}>Create account</Text>
+              <Text style={styles.buttonText}>Save password</Text>
             )}
           </Pressable>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/login" style={styles.link}>
-              Log in
-            </Link>
-          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -128,7 +132,7 @@ const styles = StyleSheet.create({
   inner: { flex: 1, justifyContent: "center", paddingHorizontal: space.xl, gap: space.md },
   eyebrow: { ...type.label, color: colors.muted },
   title: { ...type.hero, color: colors.foreground, marginBottom: space.lg },
-  body: { ...type.body, color: colors.muted },
+  body: { ...type.small, color: colors.muted, marginBottom: space.md },
   input: {
     ...type.body,
     height: 52,
@@ -151,7 +155,5 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.4 },
   buttonPressed: { opacity: 0.8 },
   buttonText: { ...type.label, color: colors.onAccent },
-  footer: { flexDirection: "row", justifyContent: "center", marginTop: space.lg },
-  footerText: { ...type.small, color: colors.muted },
   link: { ...type.small, color: colors.foreground, textDecorationLine: "underline" },
 });

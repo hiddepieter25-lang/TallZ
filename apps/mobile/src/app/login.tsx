@@ -78,6 +78,10 @@ export default function Login() {
             )}
           </Pressable>
 
+          <Link href="/forgot-password" style={[styles.link, styles.forgot]}>
+            Forgot your password?
+          </Link>
+
           <View style={styles.footer}>
             <Text style={styles.footerText}>No account yet? </Text>
             <Link href="/signup" style={styles.link}>
@@ -118,6 +122,7 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.4 },
   buttonPressed: { opacity: 0.8 },
   buttonText: { ...type.label, color: colors.onAccent },
+  forgot: { textAlign: "center", marginTop: space.md },
   footer: { flexDirection: "row", justifyContent: "center", marginTop: space.lg },
   footerText: { ...type.small, color: colors.muted },
   link: { ...type.small, color: colors.foreground, textDecorationLine: "underline" },

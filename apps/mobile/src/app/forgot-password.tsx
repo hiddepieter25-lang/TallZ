@@ -10,38 +10,27 @@ import {
   View,
 } from "react-native";
 import { Link } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import * as Linking from "expo-linking";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
-import { genericAuthMessage } from "@/lib/auth-errors";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
-export default function Signup() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
 
-  const signUp = async () => {
+  const requestReset = async () => {
     setPending(true);
-    setError(null);
-    // Without emailRedirectTo the confirmation link follows the project-wide
-    // Site URL, which pointed at the web app that no longer exists. createURL
-    // resolves to tallz:// in a real build and to the Expo Go / localhost
-    // equivalent while developing.
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: Linking.createURL("/") },
+    // createURL resolves to tallz://reset-password in a real build, and to the
+    // Expo Go / localhost equivalent while developing — so the same code works
+    // in both without a hardcoded scheme.
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: Linking.createURL("/reset-password"),
     });
-    if (signUpError) {
-      setError(genericAuthMessage(signUpError.message));
-    } else if (!data.session) {
-      // Email confirmation is on, so there's no session yet — say so rather
-      // than leaving the user on a screen that looks like it did nothing.
-      setSent(true);
-    }
+    // Reported as sent whether or not the address has an account. Saying
+    // "no such user" would let anyone check which emails are registered.
+    setSent(true);
     setPending(false);
   };
 
@@ -49,10 +38,11 @@ export default function Signup() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Almost there</Text>
-          <Text style={styles.title}>check your email</Text>
+          <Text style={styles.eyebrow}>Check your email</Text>
+          <Text style={styles.title}>on its way</Text>
           <Text style={styles.body}>
-            We sent a confirmation link to {email}. Open it, then come back and log in.
+            If an account exists for {email}, we sent a link to set a new password. Open it on this
+            phone — it opens straight back into TallZ.
           </Text>
           <Link href="/login" style={styles.link}>
             Back to log in
@@ -70,7 +60,10 @@ export default function Signup() {
       >
         <View style={styles.inner}>
           <Text style={styles.eyebrow}>Account</Text>
-          <Text style={styles.title}>create account</Text>
+          <Text style={styles.title}>reset password</Text>
+          <Text style={styles.body}>
+            Enter the email you signed up with and we&apos;ll send you a link to set a new password.
+          </Text>
 
           <TextInput
             value={email}
@@ -82,36 +75,25 @@ export default function Signup() {
             keyboardType="email-address"
             style={styles.input}
           />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password (min. 8 characters)"
-            placeholderTextColor={colors.muted}
-            autoCapitalize="none"
-            secureTextEntry
-            style={styles.input}
-          />
-
-          {error && <Text style={styles.error}>{error}</Text>}
 
           <Pressable
-            onPress={signUp}
-            disabled={pending || !email || password.length < 8}
+            onPress={requestReset}
+            disabled={pending || !email}
             style={({ pressed }) => [
               styles.button,
-              (pending || !email || password.length < 8) && styles.buttonDisabled,
+              (pending || !email) && styles.buttonDisabled,
               pressed && styles.buttonPressed,
             ]}
           >
             {pending ? (
               <ActivityIndicator color={colors.onAccent} />
             ) : (
-              <Text style={styles.buttonText}>Create account</Text>
+              <Text style={styles.buttonText}>Send link</Text>
             )}
           </Pressable>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>Remembered it? </Text>
             <Link href="/login" style={styles.link}>
               Log in
             </Link>
@@ -127,8 +109,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   inner: { flex: 1, justifyContent: "center", paddingHorizontal: space.xl, gap: space.md },
   eyebrow: { ...type.label, color: colors.muted },
-  title: { ...type.hero, color: colors.foreground, marginBottom: space.lg },
-  body: { ...type.body, color: colors.muted },
+  title: { ...type.hero, color: colors.foreground },
+  body: { ...type.small, color: colors.muted, marginBottom: space.md },
   input: {
     ...type.body,
     height: 52,
@@ -138,7 +120,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     color: colors.foreground,
   },
-  error: { ...type.small, color: colors.danger },
   button: {
     minHeight: MIN_TAP,
     height: 52,

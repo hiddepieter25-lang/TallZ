@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as Linking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   useFonts,
@@ -10,7 +11,12 @@ import {
   Archivo_700Bold,
 } from "@expo-google-fonts/archivo";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { isRecovery, parseAuthLink } from "@/lib/deep-links";
 import { colors } from "@/lib/theme";
+
+/** Screens reachable without a session. */
+const AUTH_SCREENS = ["login", "signup", "forgot-password"];
 
 /**
  * Sends signed-out users to the login screen and signed-in users away from it.
@@ -25,7 +31,14 @@ function useProtectedRoute() {
   useEffect(() => {
     if (!ready) return;
 
-    const inAuthScreens = segments[0] === "login" || segments[0] === "signup";
+    const route = segments[0];
+
+    // reset-password is the one screen that belongs to neither state: it runs
+    // on the short-lived session the recovery link creates, so redirecting a
+    // "logged in" user away from it would slam the door on the way in.
+    if (route === "reset-password") return;
+
+    const inAuthScreens = AUTH_SCREENS.includes(route as string);
 
     if (!session && !inAuthScreens) {
       router.replace("/login");
@@ -35,8 +48,59 @@ function useProtectedRoute() {
   }, [session, ready, segments, router]);
 }
 
+/**
+ * Turns the links Supabase mails out into a session.
+ *
+ * Signup confirmation and password recovery both come back into the app as a
+ * `tallz://` URL carrying either a PKCE code or a token pair. Supabase's client
+ * runs with `detectSessionInUrl: false` (required on native — there is no
+ * browser URL), so nothing picks these up unless it is done here.
+ */
+function useAuthDeepLinks() {
+  const url = Linking.useURL();
+  const router = useRouter();
+  const handled = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!url || handled.current === url) return;
+    const link = parseAuthLink(url);
+    if (!link) return;
+
+    // Cold start delivers the same URL again on the next render; without this
+    // the code would be redeemed twice and the second attempt would fail.
+    handled.current = url;
+
+    if (link.kind === "error") {
+      router.replace({ pathname: "/reset-password", params: { linkError: link.message } });
+      return;
+    }
+
+    const recovery = isRecovery(link);
+
+    (async () => {
+      const { error } =
+        link.kind === "code"
+          ? await supabase.auth.exchangeCodeForSession(link.code)
+          : await supabase.auth.setSession({
+              access_token: link.accessToken,
+              refresh_token: link.refreshToken,
+            });
+
+      if (error) {
+        router.replace({ pathname: "/reset-password", params: { linkError: error.message } });
+        return;
+      }
+
+      // A recovery link has to land on the new-password screen. A confirmation
+      // link just needed the session — useProtectedRoute takes it from here.
+      if (recovery) router.replace("/reset-password");
+    })();
+  }, [url, router]);
+}
+
 function RootNavigator() {
   useProtectedRoute();
+  useAuthDeepLinks();
 
   return (
     <Stack
