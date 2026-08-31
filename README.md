@@ -49,6 +49,16 @@ Needs `apps/mobile/.env.local` with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_
 npm run dev --workspace=apps/web
 ```
 
+## Tests
+
+```bash
+npm test
+```
+
+Runs two suites: the ingestion and discovery scripts in `scripts/`, then the app's domain logic in `apps/mobile`. They are separate because the scripts are plain Node .mjs with no bundler and share nothing with the app's setup but the runner. `npm run test:scripts` runs only the first.
+
+Both cover pure logic — ranking, filtering, tall detection, the query rotation. Nothing hits the network or the database, so a full run takes under a second.
+
 ## Open decisions
 
 Product data sourcing, the recommendation algorithm beyond the current heuristic, and monetization details are unresolved — see [CLAUDEMODE.md](./CLAUDEMODE.md#6-open-decisions--ask-dont-assume) before building features that depend on them. The brand name and logo are also still open.

@@ -3,5 +3,12 @@
   "private": true,
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "scripts": {
+    "test": "vitest run && npm test --workspace=apps/mobile",
+    "test:scripts": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  }
 }

@@ -9,42 +9,107 @@ export const UA = "Mozilla/5.0 (compatible; tallz-product-research/1.0)";
 
 export const EXCLUDE_TITLE = /gift card|checkout|protection|insurance|warranty|^shipping/i;
 
+/**
+ * Size labels that mean "tall" on their own — LT, XLT, 2XLT, MT, XT, 34L..40L.
+ * Anchored, because "lt" appears inside plenty of ordinary words.
+ */
+const TALL_SIZE_LABEL = /^\d?x{0,3}lt$|^\d?x{0,3}mt$|^xt$|^3[4-9]l$|^40l$/i;
+
+/** The words a human would read as "this is cut for tall people". */
+const TALL_PHRASE = /\btall\b|\bextra\s*tall\b|\bbig\s*(?:&|and)\s*tall\b/i;
+
+/**
+ * Every field on a Shopify product that can carry a tall marker, other than
+ * the title: the product type, its tags, and the size options on its variants.
+ *
+ * These are the same fields `ingest_shopify_page` already trusts in SQL. Keeping
+ * one answer to "is this tall?" matters: discovery used to ask only the title and
+ * so rejected shops the ingester would happily import. TALLTOGS has "tall" in
+ * zero of its 42 product titles and in 36 of their tags — it was turned away at
+ * the door while sitting in the catalog with 80 products.
+ */
+export function tallSignalFields(product) {
+  const tags = Array.isArray(product.tags)
+    ? product.tags
+    : String(product.tags ?? "").split(",");
+
+  const variantOptions = (product.variants ?? []).flatMap((v) => [
+    v.option1,
+    v.option2,
+    v.option3,
+  ]);
+
+  const optionValues = (product.options ?? []).flatMap((o) => o.values ?? []);
+
+  return [product.product_type ?? "", ...tags, ...variantOptions, ...optionValues]
+    .filter(Boolean)
+    .map((value) => String(value).trim());
+}
+
+/**
+ * "high" when a structured field says so, "low" when only the title does, null
+ * when nothing does. Mirrors the confidence split in `ingest_shopify_page`,
+ * where title-only matches are inserted inactive pending review.
+ */
+export function tallConfidence(product) {
+  for (const field of tallSignalFields(product)) {
+    if (TALL_SIZE_LABEL.test(field) || TALL_PHRASE.test(field)) return "high";
+  }
+  if (TALL_PHRASE.test(product.title ?? "")) return "low";
+  return null;
+}
+
+export function isTallProduct(product) {
+  return tallConfidence(product) !== null;
+}
+
+/**
+ * Country-code domains we can read a market off. Europe is over-represented on
+ * purpose: TallZ launches there, and discovery searches European-language
+ * queries, so these are the endings new candidates actually arrive on.
+ *
+ * A .com tells us nothing — a Dutch brand on a .com still lands here as USA.
+ * That is what the pending/approve step in /admin/retailers is for; a person
+ * fixes it in one click before the retailer goes live.
+ */
+const DOMAIN_MARKETS = [
+  { match: /.co.uk$|.uk$/, country: "UK", region: "UK", currency: "GBP" },
+  { match: /.nz$/, country: "New Zealand", region: "NZ", currency: "NZD" },
+  { match: /.com.au$|.au$/, country: "Australia", region: "AU", currency: "AUD" },
+  { match: /.ca$/, country: "Canada", region: "CA", currency: "CAD" },
+  { match: /.de$/, country: "Germany", region: "EU", currency: "EUR" },
+  { match: /.fr$/, country: "France", region: "EU", currency: "EUR" },
+  { match: /.nl$/, country: "Netherlands", region: "EU", currency: "EUR" },
+  { match: /.be$/, country: "Belgium", region: "EU", currency: "EUR" },
+  { match: /.it$/, country: "Italy", region: "EU", currency: "EUR" },
+  { match: /.es$/, country: "Spain", region: "EU", currency: "EUR" },
+  { match: /.at$/, country: "Austria", region: "EU", currency: "EUR" },
+  { match: /.ie$/, country: "Ireland", region: "EU", currency: "EUR" },
+  { match: /.fi$/, country: "Finland", region: "EU", currency: "EUR" },
+  { match: /.pt$/, country: "Portugal", region: "EU", currency: "EUR" },
+  { match: /.pl$/, country: "Poland", region: "EU", currency: "PLN" },
+  { match: /.se$/, country: "Sweden", region: "EU", currency: "SEK" },
+  { match: /.dk$/, country: "Denmark", region: "EU", currency: "DKK" },
+  { match: /.no$/, country: "Norway", region: "EU", currency: "NOK" },
+  { match: /.ch$/, country: "Switzerland", region: "EU", currency: "CHF" },
+  { match: /.eu$/, country: "Europe", region: "EU", currency: "EUR" },
+];
+
+function marketFor(url) {
+  const host = new URL(url).hostname;
+  return DOMAIN_MARKETS.find((m) => m.match.test(host));
+}
+
 export function guessCurrency(url) {
-  const host = new URL(url).hostname;
-  if (/\.co\.uk$|\.uk$/.test(host)) return "GBP";
-  if (/\.nz$/.test(host)) return "NZD";
-  if (/\.com\.au$|\.au$/.test(host)) return "AUD";
-  if (/\.de$|\.fr$|\.it$|\.es$|\.nl$|\.eu$/.test(host)) return "EUR";
-  return "USD";
+  return marketFor(url)?.currency ?? "USD";
 }
 
-// Best-effort default only — always confirm/override with --region and
-// --size-system by eye (per-brand shipping is not something this feed
-// exposes, unlike currency which the domain TLD is a decent proxy for).
 export function guessRegion(url) {
-  const host = new URL(url).hostname;
-  if (/\.co\.uk$|\.uk$/.test(host)) return "UK";
-  if (/\.nz$/.test(host)) return "NZ";
-  if (/\.com\.au$|\.au$/.test(host)) return "AU";
-  if (/\.de$|\.fr$|\.it$|\.es$|\.nl$|\.eu$/.test(host)) return "EU";
-  return "US";
+  return marketFor(url)?.region ?? "US";
 }
 
-// Same best-effort TLD proxy as guessRegion/guessCurrency, used by
-// discover-retailers.mjs to fill in the "country" field with no human
-// involved — matches the granularity already used for existing retailers
-// (e.g. "Germany" rather than a generic "EU").
 export function guessCountry(url) {
-  const host = new URL(url).hostname;
-  if (/\.co\.uk$|\.uk$/.test(host)) return "UK";
-  if (/\.nz$/.test(host)) return "New Zealand";
-  if (/\.com\.au$|\.au$/.test(host)) return "Australia";
-  if (/\.de$/.test(host)) return "Germany";
-  if (/\.fr$/.test(host)) return "France";
-  if (/\.nl$/.test(host)) return "Netherlands";
-  if (/\.it$/.test(host)) return "Italy";
-  if (/\.es$/.test(host)) return "Spain";
-  return "USA";
+  return marketFor(url)?.country ?? "USA";
 }
 
 export function guessCategory(title) {
@@ -135,7 +200,7 @@ export async function fetchProducts(baseUrl, path, limit) {
 export function buildCandidates(rawProducts, { url, type, max }) {
   let candidates = rawProducts.filter((p) => !EXCLUDE_TITLE.test(p.title));
 
-  const tallOnly = candidates.filter((p) => /tall/i.test(p.title));
+  const tallOnly = candidates.filter(isTallProduct);
   if (tallOnly.length > 0) candidates = tallOnly;
 
   // Dedupe by exact title (color/size variants often repeat the same title).

@@ -82,7 +82,8 @@ export interface Product {
   retailerRegion: string | null;
   shippingCountries: string[];
   price: number;
-  currency: "USD" | "EUR" | "GBP" | "AUD" | "NZD";
+  /** ISO code. Discovery can add European retailers billing in SEK, DKK, NOK, CHF or PLN, so this is not a closed set of five. */
+  currency: string;
   tags: StyleTag[];
   /** Garment category shown on the placeholder swatch when there's no real photo yet. */
   category: string;
@@ -200,8 +201,28 @@ export async function getSwipeDeckProducts(count = 9): Promise<Product[]> {
   return diversifyByRetailer(withPhotos).slice(0, count);
 }
 
-export function currencySymbol(currency: Product["currency"]) {
-  return { USD: "$", EUR: "€", GBP: "£", AUD: "A$", NZD: "NZ$" }[currency];
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  AUD: "A$",
+  NZD: "NZ$",
+  CAD: "C$",
+  CHF: "CHF ",
+  SEK: "kr ",
+  DKK: "kr ",
+  NOK: "kr ",
+  PLN: "zł ",
+};
+
+/**
+ * Falls back to the ISO code rather than a symbol. Retailer discovery now
+ * reaches markets outside the original five, and an unknown currency used to
+ * render the price as "undefined299" — a wrong price is worse than an
+ * unfamiliar one.
+ */
+export function currencySymbol(currency: string) {
+  return CURRENCY_SYMBOLS[currency] ?? `${currency} `;
 }
 
 export interface QuizAnswers {
