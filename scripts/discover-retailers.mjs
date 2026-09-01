@@ -28,6 +28,7 @@ import {
   guessRegion,
   guessCountry,
 } from "./lib/shopify-source.mjs";
+import { checkRobots } from "./lib/robots.mjs";
 import {
   createServiceClient,
   getKnownRetailerHostnames,
@@ -143,6 +144,11 @@ const CHECK_SAMPLE_SIZE = 250;
  * work would have been turned away.
  */
 async function checkCandidate(baseUrl) {
+  // Asked before anything is fetched, not after. A shop that says no in
+  // robots.txt shouldn't have its catalog read first and be discarded second.
+  const robots = await checkRobots(baseUrl);
+  if (!robots.allowed) return { ok: false, reason: robots.reason };
+
   const result = await fetchProducts(baseUrl, "", CHECK_SAMPLE_SIZE);
   if (!result.ok) return { ok: false, reason: result.reason };
 

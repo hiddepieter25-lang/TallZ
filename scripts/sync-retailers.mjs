@@ -18,6 +18,7 @@
  * Requires env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 import { fetchProducts, buildCandidates, guessCurrency } from "./lib/shopify-source.mjs";
+import { checkRobots } from "./lib/robots.mjs";
 import {
   createServiceClient,
   getApprovedRetailers,
@@ -32,6 +33,19 @@ const CANDIDATE_POOL = 100; // don't pre-truncate candidates before dedup; the
 const MAX_NEW_PER_RUN = 20;
 
 async function syncRetailer(supabase, retailer) {
+  // Re-asked every run, not just when the retailer was first approved. A shop
+  // that adds a Disallow later has changed its mind, and this is the only place
+  // that would notice. Treated like the not-on-Shopify case: a permanent
+  // condition to record and move past, not a failure to raise an alarm about.
+  const robots = await checkRobots(retailer.url);
+  if (!robots.allowed) {
+    const err = new Error(robots.reason);
+    // "Expected" as in: a known, permanent state of the world, not a fault.
+    // It records and moves on rather than turning the whole run red.
+    err.expected = true;
+    throw err;
+  }
+
   const result = await fetchProducts(retailer.url, retailer.path, FETCH_LIMIT);
   if (!result.ok) {
     const err = new Error(`fetch failed: HTTP ${result.status} — ${result.reason}`);
@@ -40,7 +54,7 @@ async function syncRetailer(supabase, retailer) {
     // read. Failing the whole run over that made every week look broken even
     // when the ten real feeds synced fine. Still attempted every run — if one
     // ever moves to Shopify it starts working on its own.
-    err.notShopify = Boolean(result.notShopify);
+    err.expected = Boolean(result.notShopify);
     throw err;
   }
 
@@ -81,8 +95,8 @@ async function main() {
         errors: null,
       });
     } catch (err) {
-      if (!err.notShopify) hadFailure = true;
-      console.error(`  ${err.notShopify ? "SKIPPED (not a Shopify store)" : "FAILED"}: ${err.message}`);
+      if (!err.expected) hadFailure = true;
+      console.error(`  ${err.expected ? "SKIPPED" : "FAILED"}: ${err.message}`);
       // Supabase/Postgrest errors carry extra fields that err.message alone
       // drops — print them too so a follow-up failure doesn't need another
       // round of guessing.
@@ -94,7 +108,7 @@ async function main() {
         await logIngestionJob(supabase, {
           retailerId: retailer.id,
           sourceType: SOURCE_TYPE,
-          status: err.notShopify ? "skipped" : "error",
+          status: err.expected ? "skipped" : "error",
           itemsIngested: 0,
           errors: err.message,
         });
