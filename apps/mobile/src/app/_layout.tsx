@@ -11,6 +11,7 @@ import {
   Archivo_700Bold,
 } from "@expo-google-fonts/archivo";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { CatalogProvider } from "@/lib/catalog";
 import { supabase } from "@/lib/supabase";
 import { isRecovery, parseAuthLink } from "@/lib/deep-links";
 import { colors } from "@/lib/theme";
@@ -145,8 +146,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="dark" />
-        <RootNavigator />
+        <CatalogProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </CatalogProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

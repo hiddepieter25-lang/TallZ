@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Linking from "expo-linking";
 import { supabase } from "@/lib/supabase";
 import { genericAuthMessage } from "@/lib/auth-errors";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 export default function Signup() {
@@ -49,13 +50,11 @@ export default function Signup() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Almost there</Text>
-          <Text style={styles.title}>check your email</Text>
-          <Text style={styles.body}>
-            We sent a confirmation link to {email}. Open it, then come back and log in.
-          </Text>
+          <Text style={styles.eyebrow}>{t("auth.checkEmailEyebrow")}</Text>
+          <Text style={styles.title}>{t("auth.checkEmailTitle")}</Text>
+          <Text style={styles.body}>{t("auth.checkEmailBody", { email })}</Text>
           <Link href="/login" style={styles.link}>
-            Back to log in
+            {t("auth.backToLogin")}
           </Link>
         </View>
       </SafeAreaView>
@@ -69,13 +68,13 @@ export default function Signup() {
         style={styles.flex}
       >
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Account</Text>
-          <Text style={styles.title}>create account</Text>
+          <Text style={styles.eyebrow}>{t("auth.accountEyebrow")}</Text>
+          <Text style={styles.title}>{t("auth.signupTitle")}</Text>
 
           <TextInput
             value={email}
             onChangeText={setEmail}
-            placeholder="Email"
+            placeholder={t("auth.email")}
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             autoComplete="email"
@@ -85,7 +84,7 @@ export default function Signup() {
           <TextInput
             value={password}
             onChangeText={setPassword}
-            placeholder="Password (min. 8 characters)"
+            placeholder={t("auth.password")}
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             secureTextEntry
@@ -106,14 +105,14 @@ export default function Signup() {
             {pending ? (
               <ActivityIndicator color={colors.onAccent} />
             ) : (
-              <Text style={styles.buttonText}>Create account</Text>
+              <Text style={styles.buttonText}>{t("auth.createAccount")}</Text>
             )}
           </Pressable>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>{t("auth.haveAccount")}</Text>
             <Link href="/login" style={styles.link}>
-              Log in
+              {t("auth.login")}
             </Link>
           </View>
         </View>

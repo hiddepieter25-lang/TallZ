@@ -97,8 +97,10 @@ export interface Product {
   fit: "slim" | "regular" | "relaxed" | "baggy";
   /** Outbound link to the actual retailer product page. */
   productUrl: string | null;
-  /** Real product photo, when one has been ingested (Shopify-sourced retailers so far). */
+  /** First product photo, when one has been ingested — what a card shows. */
   imageUrl: string | null;
+  /** Every ingested photo in display order. The detail screen pages through these. */
+  imageUrls: string[];
   /** Identified from the product photo during review — null until classified, never guessed. */
   color: string | null;
   material: string | null;
@@ -116,7 +118,7 @@ export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, price_cents, currency, style_tags, category, size_note, fit, inseam_cm, sleeve_cm, body_length_cm, fit_notes, product_url, color, material, pattern, gender, created_at, retailers(id, name, region, shipping_countries), product_images(image_url)"
+      "id, name, price_cents, currency, style_tags, category, size_note, fit, inseam_cm, sleeve_cm, body_length_cm, fit_notes, product_url, color, material, pattern, gender, created_at, retailers(id, name, region, shipping_countries), product_images(image_url, sort_order)"
     )
     .eq("active", true)
     .order("created_at", { ascending: true });
@@ -130,6 +132,11 @@ export async function getProducts(): Promise<Product[]> {
       region: string | null;
       shipping_countries: string[] | null;
     } | null;
+    const imageUrls = [
+      ...((row.product_images as unknown as { image_url: string; sort_order: number }[] | null) ?? []),
+    ]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((i) => i.image_url);
     return {
       id: row.id,
       name: row.name,
@@ -148,8 +155,8 @@ export async function getProducts(): Promise<Product[]> {
       fitNotes: row.fit_notes ?? null,
       fit: (row.fit ?? "regular") as Product["fit"],
       productUrl: row.product_url,
-      imageUrl:
-        (row.product_images as unknown as { image_url: string }[] | null)?.[0]?.image_url ?? null,
+      imageUrl: imageUrls[0] ?? null,
+      imageUrls,
       color: row.color ?? null,
       material: row.material ?? null,
       pattern: row.pattern ?? null,
@@ -157,6 +164,33 @@ export async function getProducts(): Promise<Product[]> {
       createdAt: row.created_at,
     };
   });
+}
+
+/**
+ * The signed-in user's saved products. RLS restricts the table to own rows,
+ * so no user filter is needed here — and adding one would only hide a policy
+ * mistake rather than surface it.
+ */
+export async function getSavedProductIds(): Promise<Set<string>> {
+  const { data, error } = await supabase.from("saved_products").select("product_id");
+  if (error) throw error;
+  return new Set((data ?? []).map((row) => row.product_id as string));
+}
+
+export async function saveProduct(userId: string, productId: string): Promise<void> {
+  const { error } = await supabase
+    .from("saved_products")
+    .upsert({ user_id: userId, product_id: productId }, { onConflict: "user_id,product_id" });
+  if (error) throw error;
+}
+
+export async function unsaveProduct(userId: string, productId: string): Promise<void> {
+  const { error } = await supabase
+    .from("saved_products")
+    .delete()
+    .eq("user_id", userId)
+    .eq("product_id", productId);
+  if (error) throw error;
 }
 
 const CATALOG_HEALTH_TARGET = 300;
@@ -505,21 +539,15 @@ export function selectTopPicks(
  * migration for why that is safe to call with the public key.
  */
 export async function getTopPicks(
+  products: Product[],
   count = 4
-): Promise<{ picks: Product[]; catalogSize: number }> {
-  const products = await getProducts();
-
-  // Returned alongside the picks rather than counted separately: the home page
-  // quotes the catalog size in its opening line, and the products are already
-  // in hand here. A second round trip for a number we have would be waste.
-  const catalogSize = products.length;
-
+): Promise<Product[]> {
   const { data, error } = await supabase.rpc("top_products", { p_limit: 12 });
   if (error) {
     // Popularity is an enhancement, not a requirement. Losing it should cost
     // the ranking, not the shop window.
     console.error("Couldn't read product popularity:", error.message);
-    return { picks: selectTopPicks(products, [], count), catalogSize };
+    return selectTopPicks(products, [], count);
   }
 
   const scores: ProductScore[] = (data ?? []).map(
@@ -529,7 +557,7 @@ export async function getTopPicks(
     })
   );
 
-  return { picks: selectTopPicks(products, scores, count), catalogSize };
+  return selectTopPicks(products, scores, count);
 }
 
 // Flat grayscale ramp (no warm tint, no gradient) — matches DESIGN.md's

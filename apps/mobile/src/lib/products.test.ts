@@ -45,6 +45,7 @@ function product(overrides: Partial<Product> = {}): Product {
     fit: "regular",
     productUrl: "https://example.com/p",
     imageUrl: "https://example.com/p.jpg",
+    imageUrls: ["https://example.com/p.jpg"],
     color: null,
     material: null,
     pattern: null,

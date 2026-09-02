@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { Tabs, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { t } from "@/lib/i18n";
 import { colors, fonts, space, MIN_TAP } from "@/lib/theme";
 
 /**
@@ -51,7 +52,7 @@ export default function TabsLayout() {
             hitSlop={space.md}
             style={styles.logoTap}
             accessibilityRole="button"
-            accessibilityLabel="TallZ — go to the introduction"
+            accessibilityLabel={t("header.logo")}
           >
             <Image
               source={require("../../../assets/tallz-logo.png")}
@@ -78,9 +79,9 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen name="search" options={{ title: "Search" }} />
-      <Tabs.Screen name="explore" options={{ title: "Explore" }} />
-      <Tabs.Screen name="account" options={{ title: "Account" }} />
+      <Tabs.Screen name="search" options={{ title: t("tabs.search") }} />
+      <Tabs.Screen name="explore" options={{ title: t("tabs.explore") }} />
+      <Tabs.Screen name="account" options={{ title: t("tabs.account") }} />
     </Tabs>
   );
 }

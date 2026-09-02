@@ -1,34 +1,40 @@
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useMemo, useState } from "react";
+import { ActivityIndicator, Dimensions, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { currencySymbol, getProducts, rankProducts, type Product } from "@/lib/products";
+import { currencySymbol, rankProducts, type Product } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog";
 import { trackProductEvent } from "@/lib/track";
+import { ErrorState } from "@/components/ErrorState";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 /**
- * The full-screen swipe feed, ported from the website's /explore. One product
- * fills the screen; snap paging makes each flick land on exactly one card,
- * which is what made it feel like a feed rather than a long scroll.
+ * The full-screen swipe feed. One product fills the screen; snap paging makes
+ * each flick land on exactly one card.
+ *
+ * Ordered by the user's quiz answers, like Search. It used to ignore them on
+ * purpose ("pure discovery"), but that left the quiz with no visible effect
+ * anywhere, which made the promise on the quiz card untrue.
  */
 function ExploreCard({ product, height }: { product: Product; height: number }) {
-  const [decision, setDecision] = useState<"liked" | "skipped" | null>(null);
+  const router = useRouter();
+  const { isSaved, toggleSave } = useCatalog();
+  const [skipped, setSkipped] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const liked = isSaved(product.id);
+  // The URL itself, not a boolean: `a && b` yields b, so the old form left
+  // TypeScript with `true` where an image source was needed.
+  const photoUrl = imageFailed ? null : product.imageUrl;
 
-  const decide = (kind: "liked" | "skipped") => {
-    setDecision(kind);
+  const skip = () => {
+    setSkipped(true);
     void trackProductEvent({
       productId: product.id,
       retailerId: product.retailerId,
-      signalType: kind === "liked" ? "save" : "ignore",
+      signalType: "ignore",
       placement: "explore",
     });
   };
@@ -47,13 +53,27 @@ function ExploreCard({ product, height }: { product: Product; height: number }) 
 
   return (
     <View style={[styles.card, { height }]}>
-      {product.imageUrl ? (
-        <Image source={{ uri: product.imageUrl }} style={styles.image} contentFit="cover" />
-      ) : (
-        <View style={[styles.image, styles.placeholder]} />
-      )}
+      <Pressable
+        onPress={() => router.push({ pathname: "/product/[id]", params: { id: product.id } })}
+        style={styles.imagePress}
+        accessibilityRole="button"
+        accessibilityLabel={t("card.open", { name: product.name, retailer: product.retailer })}
+      >
+        {photoUrl ? (
+          <Image
+            source={{ uri: photoUrl }}
+            style={styles.image}
+            contentFit="cover"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <View style={[styles.image, styles.placeholder]}>
+            <Text style={styles.placeholderText}>{product.category}</Text>
+          </View>
+        )}
+      </Pressable>
 
-      <View style={styles.overlay}>
+      <View style={styles.overlay} pointerEvents="box-none">
         <View style={styles.info}>
           <Text style={styles.brand}>{product.retailer}</Text>
           <Text style={styles.name} numberOfLines={2}>
@@ -65,23 +85,23 @@ function ExploreCard({ product, height }: { product: Product; height: number }) 
           </Text>
           {product.productUrl && (
             <Pressable onPress={open} style={styles.shopButton}>
-              <Text style={styles.shopButtonText}>Shop this</Text>
+              <Text style={styles.shopButtonText}>{t("explore.shop")}</Text>
             </Pressable>
           )}
         </View>
 
         <View style={styles.actions}>
           <Pressable
-            onPress={() => decide("skipped")}
-            style={[styles.action, decision === "skipped" && styles.actionSkipOn]}
-            accessibilityLabel="Skip"
+            onPress={skip}
+            style={[styles.action, skipped && styles.actionSkipOn]}
+            accessibilityLabel={t("explore.skip")}
           >
-            <Text style={[styles.actionIcon, decision === "skipped" && styles.actionIconSkipOn]}>✕</Text>
+            <Text style={[styles.actionIcon, skipped && styles.actionIconSkipOn]}>✕</Text>
           </Pressable>
           <Pressable
-            onPress={() => decide("liked")}
-            style={[styles.action, decision === "liked" && styles.actionLikeOn]}
-            accessibilityLabel="Like"
+            onPress={() => void toggleSave(product, "explore")}
+            style={[styles.action, liked && styles.actionLikeOn]}
+            accessibilityLabel={liked ? t("card.unsave") : t("explore.like")}
           >
             <Text style={styles.actionIcon}>♥</Text>
           </Pressable>
@@ -92,16 +112,10 @@ function ExploreCard({ product, height }: { product: Product; height: number }) 
 }
 
 export default function Explore() {
-  const [products, setProducts] = useState<Product[] | null>(null);
+  const { products, answers, error, reload } = useCatalog();
   const [height, setHeight] = useState(Dimensions.get("window").height);
 
-  useEffect(() => {
-    void getProducts()
-      // No quiz answers here on purpose — pure discovery. rankProducts still
-      // diversifies by retailer rather than leaving an arbitrary order.
-      .then((all) => setProducts(rankProducts(all, { swipeTags: [], occasions: [] })))
-      .catch(() => setProducts([]));
-  }, []);
+  const ranked = useMemo(() => (products ? rankProducts(products, answers) : []), [products, answers]);
 
   if (products === null) {
     return (
@@ -111,26 +125,38 @@ export default function Explore() {
     );
   }
 
-  if (products.length === 0) {
+  if (error) {
     return (
       <SafeAreaView style={styles.center}>
-        <Text style={styles.empty}>Nothing to explore yet.</Text>
+        <ErrorState message={error} onRetry={reload} />
+      </SafeAreaView>
+    );
+  }
+
+  if (ranked.length === 0) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text style={styles.empty}>{t("explore.empty")}</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <View
-      style={styles.safe}
-      onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
-    >
+    <View style={styles.safe} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
       <FlatList
-        data={products}
+        data={ranked}
         keyExtractor={(p) => p.id}
         pagingEnabled
         showsVerticalScrollIndicator={false}
         snapToInterval={height}
         decelerationRate="fast"
+        // Full-screen images: without this the list mounts every card in the
+        // catalog and holds each one's photo in memory.
+        initialNumToRender={2}
+        maxToRenderPerBatch={3}
+        windowSize={3}
+        removeClippedSubviews
+        getItemLayout={(_, index) => ({ length: height, offset: height * index, index })}
         renderItem={({ item }) => <ExploreCard product={item} height={height} />}
       />
     </View>
@@ -143,8 +169,10 @@ const styles = StyleSheet.create({
   empty: { ...type.small, color: colors.muted },
 
   card: { width: "100%", backgroundColor: colors.foreground },
+  imagePress: { width: "100%", height: "100%" },
   image: { width: "100%", height: "100%" },
-  placeholder: { backgroundColor: "#222" },
+  placeholder: { backgroundColor: "#222", alignItems: "center", justifyContent: "center" },
+  placeholderText: { ...type.label, color: "rgba(255,255,255,0.5)" },
 
   overlay: {
     position: "absolute",

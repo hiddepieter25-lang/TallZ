@@ -30,7 +30,13 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",
-      "expo-font"
-    ]
+      "expo-font",
+      "expo-localization"
+    ],
+    "splash": {
+      "image": "./assets/tallz-mark.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    }
   }
 }

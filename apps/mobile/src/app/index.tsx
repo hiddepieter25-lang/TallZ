@@ -1,21 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getLatestOnboardingResponse, getTopPicks, type Product } from "@/lib/products";
+import { getTopPicks, type Product } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog";
 import { getConsent, setConsent } from "@/lib/consent";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { ProductCard } from "@/components/ProductCard";
+import { ErrorState } from "@/components/ErrorState";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 /**
@@ -27,55 +21,40 @@ import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
  * that the tab bar's logo is the way back, and signing in lands on Search.
  *
  * Four products, not the catalog. The whole catalog lived here once, which made
- * this a feed with an essay stapled on top rather than a shop window. Four is
- * what the website showed, and for the same reason: enough to prove there is
- * real stock behind the words, few enough that the words still get read.
+ * this a feed with an essay stapled on top rather than a shop window.
  */
 export default function Home() {
   const router = useRouter();
   const { session } = useAuth();
+  const { products, hasAnswers, error, reload } = useCatalog();
   const [picks, setPicks] = useState<Product[] | null>(null);
-  const [catalogSize, setCatalogSize] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [needsConsent, setNeedsConsent] = useState(false);
-  const [showQuizPrompt, setShowQuizPrompt] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      setError(null);
-      const { picks: chosen, catalogSize: size } = await getTopPicks(4);
-      setPicks(chosen);
-      setCatalogSize(size);
-    } catch {
-      setError("Couldn't load products. Pull down to try again.");
-      setPicks([]);
-    }
+  useEffect(() => {
+    void getConsent().then((c) => setNeedsConsent(c === null));
   }, []);
 
+  // Picks need one extra call for the popularity scores; the products
+  // themselves come from the shared catalog rather than a second fetch.
   useEffect(() => {
-    void load();
-    void getConsent().then((c) => setNeedsConsent(c === null));
-  }, [load]);
-
-  useEffect(() => {
-    const userId = session?.user?.id;
-    if (!userId) return;
-    void getLatestOnboardingResponse(supabase, userId).then((saved) => setShowQuizPrompt(!saved));
-  }, [session]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  };
+    if (!products) return;
+    void getTopPicks(products, 4).then(setPicks);
+  }, [products]);
 
   const choose = async (state: "all" | "essential") => {
     await setConsent(state);
     setNeedsConsent(false);
   };
 
-  if (picks === null) {
+  if (error) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <ErrorState message={error} onRetry={reload} />
+      </SafeAreaView>
+    );
+  }
+
+  if (products === null || picks === null) {
     return (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator color={colors.foreground} />
@@ -92,43 +71,33 @@ export default function Home() {
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => <ProductCard product={item} />}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.foreground} />
-        }
         ListHeaderComponent={
           <View>
-            {/* ---- Introduction ---- */}
             <Image
               source={require("../../assets/tallz-logo.png")}
               style={styles.logo}
               contentFit="contain"
             />
 
-            <Text style={styles.eyebrow}>for women 173cm+ / men 183cm+</Text>
-            <Text style={styles.hero}>
-              Your closet.{"\n"}One tap{"\n"}from yours.
-            </Text>
-            <Text style={styles.lede}>
-              Affordable tall-fit finds from {catalogSize} pieces, curated like a feed you&apos;d
-              actually want to scroll. Tap through and check out on the seller&apos;s own site —
-              TallZ just makes the match.
-            </Text>
+            <Text style={styles.eyebrow}>{t("home.eyebrow")}</Text>
+            <Text style={styles.hero}>{t("home.hero")}</Text>
+            <Text style={styles.lede}>{t("home.lede", { count: products.length })}</Text>
 
             {/* The point of this screen for anyone who hasn't signed up. For
                 anyone who has, the same slot is simply the way back in. */}
             {session ? (
               <Pressable style={styles.cta} onPress={() => router.replace("/search")}>
-                <Text style={styles.ctaText}>Browse the catalog</Text>
+                <Text style={styles.ctaText}>{t("home.browse")}</Text>
               </Pressable>
             ) : (
               <View style={styles.ctaBlock}>
                 <Pressable style={styles.cta} onPress={() => router.push("/signup")}>
-                  <Text style={styles.ctaText}>Create account</Text>
+                  <Text style={styles.ctaText}>{t("home.createAccount")}</Text>
                 </Pressable>
                 <View style={styles.ctaFooter}>
-                  <Text style={styles.ctaFooterText}>Already have one? </Text>
+                  <Text style={styles.ctaFooterText}>{t("home.haveOne")}</Text>
                   <Link href="/login" style={styles.ctaLink}>
-                    Log in
+                    {t("home.login")}
                   </Link>
                 </View>
               </View>
@@ -142,48 +111,40 @@ export default function Home() {
                 contentFit="contain"
                 tintColor={colors.onAccent}
               />
-              <Text style={styles.heroCaption}>Cut long, worn well</Text>
+              <Text style={styles.heroCaption}>{t("home.heroCaption")}</Text>
             </View>
 
             <View style={styles.statement}>
-              <Text style={styles.statementEyebrow}>the fit problem</Text>
-              <Text style={styles.statementText}>
-                Cheap fashion shouldn&apos;t mean settling for a hem that stops an inch too soon.
-              </Text>
+              <Text style={styles.statementEyebrow}>{t("home.statementEyebrow")}</Text>
+              <Text style={styles.statementText}>{t("home.statement")}</Text>
             </View>
 
             {needsConsent && (
               <View style={styles.card}>
-                <Text style={styles.cardText}>
-                  May we log which products you view and tap, to improve your feed? Links to shops
-                  work either way.
-                </Text>
+                <Text style={styles.cardText}>{t("home.consent")}</Text>
                 <View style={styles.cardActions}>
                   <Pressable onPress={() => choose("essential")} style={styles.ghost}>
-                    <Text style={styles.ghostText}>No thanks</Text>
+                    <Text style={styles.ghostText}>{t("home.noThanks")}</Text>
                   </Pressable>
                   <Pressable onPress={() => choose("all")} style={styles.primary}>
-                    <Text style={styles.primaryText}>Allow</Text>
+                    <Text style={styles.primaryText}>{t("home.allow")}</Text>
                   </Pressable>
                 </View>
               </View>
             )}
 
-            {showQuizPrompt && (
+            {session && !hasAnswers && (
               <Pressable style={styles.card} onPress={() => router.push("/onboarding")}>
-                <Text style={styles.cardTitle}>Make this feed yours</Text>
-                <Text style={styles.cardText}>
-                  Six quick questions about your height and taste, and the order changes to match.
-                </Text>
+                <Text style={styles.cardTitle}>{t("home.quizTitle")}</Text>
+                <Text style={styles.cardText}>{t("home.quizBody")}</Text>
                 <View style={styles.cardActions}>
                   <View style={styles.primary}>
-                    <Text style={styles.primaryText}>Start</Text>
+                    <Text style={styles.primaryText}>{t("home.start")}</Text>
                   </View>
                 </View>
               </Pressable>
             )}
 
-            {/* ---- The four picks ---- */}
             <View style={styles.sectionHead}>
               <View style={styles.sectionHeadRow}>
                 <View style={styles.sectionHeadText}>
@@ -191,17 +152,17 @@ export default function Home() {
                       there is enough traffic to mean it, and the newest arrivals
                       until then — so neither "just landed" nor "best sellers"
                       would stay true. */}
-                  <Text style={styles.eyebrow}>the picks</Text>
-                  <Text style={styles.sectionTitle}>Worth a look</Text>
+                  <Text style={styles.eyebrow}>{t("home.picksEyebrow")}</Text>
+                  <Text style={styles.sectionTitle}>{t("home.picksTitle")}</Text>
                 </View>
                 <Link href="/search" style={styles.viewAll}>
-                  View all
+                  {t("home.viewAll")}
                 </Link>
               </View>
             </View>
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>{error ?? "Nothing here yet."}</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t("home.empty")}</Text>}
       />
     </SafeAreaView>
   );

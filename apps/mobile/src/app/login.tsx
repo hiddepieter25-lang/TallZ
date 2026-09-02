@@ -13,6 +13,7 @@ import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { genericAuthMessage } from "@/lib/auth-errors";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 export default function Login() {
@@ -37,13 +38,13 @@ export default function Login() {
         style={styles.flex}
       >
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Account</Text>
-          <Text style={styles.title}>log in</Text>
+          <Text style={styles.eyebrow}>{t("auth.accountEyebrow")}</Text>
+          <Text style={styles.title}>{t("auth.loginTitle")}</Text>
 
           <TextInput
             value={email}
             onChangeText={setEmail}
-            placeholder="Email"
+            placeholder={t("auth.email")}
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             autoComplete="email"
@@ -53,7 +54,7 @@ export default function Login() {
           <TextInput
             value={password}
             onChangeText={setPassword}
-            placeholder="Password"
+            placeholder={t("auth.password")}
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             secureTextEntry
@@ -74,18 +75,18 @@ export default function Login() {
             {pending ? (
               <ActivityIndicator color={colors.onAccent} />
             ) : (
-              <Text style={styles.buttonText}>Log in</Text>
+              <Text style={styles.buttonText}>{t("auth.login")}</Text>
             )}
           </Pressable>
 
           <Link href="/forgot-password" style={[styles.link, styles.forgot]}>
-            Forgot your password?
+            {t("auth.forgot")}
           </Link>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>No account yet? </Text>
+            <Text style={styles.footerText}>{t("auth.noAccount")}</Text>
             <Link href="/signup" style={styles.link}>
-              Sign up
+              {t("auth.signup")}
             </Link>
           </View>
         </View>

@@ -1,20 +1,22 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import * as WebBrowser from "expo-web-browser";
+import { useRouter } from "expo-router";
 import { currencySymbol, type Product } from "@/lib/products";
-import { trackProductClick, trackProductEvent, type Placement } from "@/lib/track";
+import { useCatalog } from "@/lib/catalog";
+import { trackProductEvent, type Placement } from "@/lib/track";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 const BOTTOMS_CATEGORIES = new Set(["Trousers", "Denim", "Cargo", "Activewear"]);
 
-function fitLine(product: Product): string | null {
+export function fitLine(product: Product): string | null {
   if (BOTTOMS_CATEGORIES.has(product.category)) {
-    return product.inseamCm ? `${product.inseamCm}cm inseam` : null;
+    return product.inseamCm ? t("fit.inseam", { cm: product.inseamCm }) : null;
   }
   const parts: string[] = [];
-  if (product.sleeveCm) parts.push(`${product.sleeveCm}cm sleeve`);
-  if (product.bodyLengthCm) parts.push(`${product.bodyLengthCm}cm body`);
+  if (product.sleeveCm) parts.push(t("fit.sleeve", { cm: product.sleeveCm }));
+  if (product.bodyLengthCm) parts.push(t("fit.body", { cm: product.bodyLengthCm }));
   return parts.length ? parts.join(" · ") : null;
 }
 
@@ -27,58 +29,51 @@ export function ProductCard({
    *  and the ranking signal can tell the home grid from search results. */
   placement?: Placement;
 }) {
-  const [saved, setSaved] = useState(false);
+  const router = useRouter();
+  const { isSaved, toggleSave } = useCatalog();
+  // A photo that exists but fails to load used to leave a blank tile. Now it
+  // falls through to the same category placeholder as a missing photo.
+  const [imageFailed, setImageFailed] = useState(false);
+  const saved = isSaved(product.id);
   const fit = fitLine(product);
+  // The URL itself, not a boolean: `a && b` yields b, so the old form left
+  // TypeScript with `true` where an image source was needed.
+  const photoUrl = imageFailed ? null : product.imageUrl;
 
-  const toggleSave = () => {
-    const next = !saved;
-    setSaved(next);
+  // Tapping a card opens the product inside the app, not the retailer. The
+  // retailer link lives on the detail screen, so a curious tap is no longer
+  // counted as a click — which was inflating the popularity score.
+  const openDetail = () => {
     void trackProductEvent({
       productId: product.id,
       retailerId: product.retailerId,
-      signalType: next ? "save" : "ignore",
+      signalType: "impression",
       placement,
     });
-  };
-
-  // Opens inside the app rather than kicking the user out to Safari/Chrome —
-  // they come back to their place in the feed when they close it.
-  const openRetailer = async () => {
-    if (!product.productUrl) return;
-    trackProductClick({
-      productId: product.id,
-      retailerId: product.retailerId,
-      linkUrl: product.productUrl,
-      placement,
-    });
-    await WebBrowser.openBrowserAsync(product.productUrl);
+    router.push({ pathname: "/product/[id]", params: { id: product.id } });
   };
 
   // The card and the heart are siblings, not nested. A Pressable inside a
   // Pressable leaves it ambiguous which one a tap belongs to, and on web it
-  // renders a <button> inside a <button>, which is invalid HTML. The heart is
-  // positioned over the image instead, so both stay independently tappable.
+  // renders a <button> inside a <button>, which is invalid HTML.
   return (
     <View style={styles.card}>
       <Pressable
-        onPress={openRetailer}
-        disabled={!product.productUrl}
+        onPress={openDetail}
         style={({ pressed }) => (pressed ? styles.pressed : null)}
         accessibilityRole="button"
-        accessibilityLabel={`${product.name} by ${product.retailer}. Opens the retailer's site.`}
+        accessibilityLabel={t("card.open", { name: product.name, retailer: product.retailer })}
       >
         <View style={styles.imageWrap}>
-          {product.imageUrl ? (
+          {photoUrl ? (
             <Image
-              source={{ uri: product.imageUrl }}
+              source={{ uri: photoUrl }}
               style={styles.image}
               contentFit="cover"
               transition={150}
+              onError={() => setImageFailed(true)}
             />
           ) : (
-            // ~18 of the catalog has no ingested photo yet. A bare grey box reads
-            // as a broken image, so name the category instead — it looks like a
-            // choice rather than a failure.
             <View style={[styles.image, styles.placeholder]}>
               <Text style={styles.placeholderText}>{product.category}</Text>
             </View>
@@ -106,11 +101,11 @@ export function ProductCard({
       </Pressable>
 
       <Pressable
-        onPress={toggleSave}
+        onPress={() => void toggleSave(product, placement)}
         hitSlop={10}
         style={[styles.heart, saved && styles.heartOn]}
         accessibilityRole="button"
-        accessibilityLabel={saved ? "Remove from saved" : "Save"}
+        accessibilityLabel={saved ? t("card.unsave") : t("card.save")}
       >
         <Text style={[styles.heartIcon, saved && styles.heartIconOn]}>♥</Text>
       </Pressable>

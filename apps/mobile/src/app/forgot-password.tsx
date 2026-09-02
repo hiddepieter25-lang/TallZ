@@ -13,6 +13,7 @@ import { Link } from "expo-router";
 import * as Linking from "expo-linking";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 export default function ForgotPassword() {
@@ -38,14 +39,11 @@ export default function ForgotPassword() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Check your email</Text>
-          <Text style={styles.title}>on its way</Text>
-          <Text style={styles.body}>
-            If an account exists for {email}, we sent a link to set a new password. Open it on this
-            phone — it opens straight back into TallZ.
-          </Text>
+          <Text style={styles.eyebrow}>{t("auth.sentEyebrow")}</Text>
+          <Text style={styles.title}>{t("auth.sentTitle")}</Text>
+          <Text style={styles.body}>{t("auth.sentBody", { email })}</Text>
           <Link href="/login" style={styles.link}>
-            Back to log in
+            {t("auth.backToLogin")}
           </Link>
         </View>
       </SafeAreaView>
@@ -59,16 +57,14 @@ export default function ForgotPassword() {
         style={styles.flex}
       >
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Account</Text>
-          <Text style={styles.title}>reset password</Text>
-          <Text style={styles.body}>
-            Enter the email you signed up with and we&apos;ll send you a link to set a new password.
-          </Text>
+          <Text style={styles.eyebrow}>{t("auth.accountEyebrow")}</Text>
+          <Text style={styles.title}>{t("auth.resetTitle")}</Text>
+          <Text style={styles.body}>{t("auth.resetBody")}</Text>
 
           <TextInput
             value={email}
             onChangeText={setEmail}
-            placeholder="Email"
+            placeholder={t("auth.email")}
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             autoComplete="email"
@@ -88,14 +84,14 @@ export default function ForgotPassword() {
             {pending ? (
               <ActivityIndicator color={colors.onAccent} />
             ) : (
-              <Text style={styles.buttonText}>Send link</Text>
+              <Text style={styles.buttonText}>{t("auth.sendLink")}</Text>
             )}
           </Pressable>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Remembered it? </Text>
+            <Text style={styles.footerText}>{t("auth.remembered")}</Text>
             <Link href="/login" style={styles.link}>
-              Log in
+              {t("auth.login")}
             </Link>
           </View>
         </View>

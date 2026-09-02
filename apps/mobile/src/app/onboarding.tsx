@@ -27,6 +27,8 @@ import {
 import { supabase } from "@/lib/supabase";
 import { trackProductEvent } from "@/lib/track";
 import { useAuth } from "@/lib/auth";
+import { useCatalog } from "@/lib/catalog";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 const HEIGHT_RANGES = ["173–178cm", "179–184cm", "185–190cm", "191–196cm", "197cm+"];
@@ -64,9 +66,9 @@ function SwipeDeck({
   const [index, setIndex] = useState(0);
   const [liked, setLiked] = useState<StyleTag[]>([]);
 
-  if (products.length === 0) return <Text style={styles.muted}>No products to show yet.</Text>;
+  if (products.length === 0) return <Text style={styles.muted}>{t("explore.empty")}</Text>;
   if (index >= products.length) {
-    return <Text style={styles.muted}>Thanks — that&apos;s enough to go on.</Text>;
+    return <Text style={styles.muted}>{t("quiz.swipeBody")}</Text>;
   }
 
   const current = products[index];
@@ -102,10 +104,10 @@ function SwipeDeck({
         {current.name}
       </Text>
       <View style={styles.deckActions}>
-        <Pressable onPress={() => decide(false)} style={styles.deckSkip} accessibilityLabel="Skip">
+        <Pressable onPress={() => decide(false)} style={styles.deckSkip} accessibilityLabel={t("explore.skip")}>
           <Text style={styles.deckSkipIcon}>✕</Text>
         </Pressable>
-        <Pressable onPress={() => decide(true)} style={styles.deckLike} accessibilityLabel="Like">
+        <Pressable onPress={() => decide(true)} style={styles.deckLike} accessibilityLabel={t("explore.like")}>
           <Text style={styles.deckLikeIcon}>♥</Text>
         </Pressable>
       </View>
@@ -115,6 +117,7 @@ function SwipeDeck({
 
 export default function Onboarding() {
   const router = useRouter();
+  const { refreshAnswers } = useCatalog();
   const { session } = useAuth();
 
   const [step, setStep] = useState(0);
@@ -176,15 +179,18 @@ export default function Onboarding() {
 
     setSaving(false);
     if (insertError) {
-      setError("Couldn't save your answers. Please try again.");
+      setError(t("quiz.saveFailed"));
       return;
     }
-    router.replace("/");
+    // Re-read straight away so Search and Explore reorder on arrival, and
+    // land in the app rather than back on the introduction.
+    await refreshAnswers();
+    router.replace("/search");
   };
 
   const steps = [
     {
-      label: "Your height",
+      label: t("quiz.heightTitle"),
       canContinue: !!height,
       content: (
         <View style={styles.stack}>
@@ -195,7 +201,7 @@ export default function Onboarding() {
       ),
     },
     {
-      label: "Where's most of your height?",
+      label: t("quiz.proportionTitle"),
       canContinue: !!proportion,
       content: (
         <View style={styles.stack}>
@@ -212,7 +218,7 @@ export default function Onboarding() {
       ),
     },
     {
-      label: "What catches your eye?",
+      label: t("quiz.swipeTitle"),
       canContinue: swipeTags !== null,
       content:
         swipeProducts === null ? (
@@ -222,7 +228,7 @@ export default function Onboarding() {
         ),
     },
     {
-      label: "What are you shopping for?",
+      label: t("quiz.occasionTitle"),
       canContinue: occasions.length > 0,
       content: (
         <View style={styles.wrap}>
@@ -238,7 +244,7 @@ export default function Onboarding() {
       ),
     },
     {
-      label: "How do you like it to fit?",
+      label: t("quiz.fitTitle"),
       canContinue: !!fit,
       content: (
         <View style={styles.stack}>
@@ -249,7 +255,7 @@ export default function Onboarding() {
       ),
     },
     {
-      label: "What's your budget, per item?",
+      label: t("quiz.budgetTitle"),
       canContinue: !!budget,
       content: (
         <View style={styles.stack}>
@@ -283,11 +289,11 @@ export default function Onboarding() {
       <View style={styles.footer}>
         {step > 0 ? (
           <Pressable onPress={() => setStep((s) => s - 1)} style={styles.back}>
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t("quiz.back")}</Text>
           </Pressable>
         ) : (
           <Pressable onPress={() => router.back()} style={styles.back}>
-            <Text style={styles.backText}>Cancel</Text>
+            <Text style={styles.backText}>{t("common.cancel")}</Text>
           </Pressable>
         )}
         <Pressable
@@ -298,7 +304,7 @@ export default function Onboarding() {
           {saving ? (
             <ActivityIndicator color={colors.onAccent} />
           ) : (
-            <Text style={styles.nextText}>{isLast ? "See my feed" : "Continue"}</Text>
+            <Text style={styles.nextText}>{isLast ? t("quiz.finish") : t("quiz.next")}</Text>
           )}
         </Pressable>
       </View>

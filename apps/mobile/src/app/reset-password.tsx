@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { genericAuthMessage } from "@/lib/auth-errors";
 import { useAuth } from "@/lib/auth";
+import { t } from "@/lib/i18n";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
 /**
@@ -36,7 +37,7 @@ export default function ResetPassword() {
 
   const save = async () => {
     if (password !== confirm) {
-      setError("The two passwords don't match.");
+      setError(t("auth.mismatch"));
       return;
     }
     setPending(true);
@@ -57,15 +58,13 @@ export default function ResetPassword() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Account</Text>
-          <Text style={styles.title}>link expired</Text>
+          <Text style={styles.eyebrow}>{t("auth.accountEyebrow")}</Text>
+          <Text style={styles.title}>{t("auth.linkExpiredTitle")}</Text>
           <Text style={styles.body}>
-            {linkError
-              ? "That reset link is no longer valid — they can only be used once, and they expire."
-              : "Open this screen from the link in your email, so we know which account to change."}
+            {linkError ? t("auth.linkExpiredBody") : t("auth.openFromEmail")}
           </Text>
           <Link href="/forgot-password" style={styles.link}>
-            Send a new link
+            {t("auth.sendNewLink")}
           </Link>
         </View>
       </SafeAreaView>
@@ -79,13 +78,13 @@ export default function ResetPassword() {
         style={styles.flex}
       >
         <View style={styles.inner}>
-          <Text style={styles.eyebrow}>Account</Text>
-          <Text style={styles.title}>new password</Text>
+          <Text style={styles.eyebrow}>{t("auth.accountEyebrow")}</Text>
+          <Text style={styles.title}>{t("auth.newPasswordTitle")}</Text>
 
           <TextInput
             value={password}
             onChangeText={setPassword}
-            placeholder="New password"
+            placeholder={t("auth.newPassword")}
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             autoComplete="new-password"
@@ -95,7 +94,7 @@ export default function ResetPassword() {
           <TextInput
             value={confirm}
             onChangeText={setConfirm}
-            placeholder="Repeat new password"
+            placeholder={t("auth.repeatPassword")}
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             autoComplete="new-password"
@@ -117,7 +116,7 @@ export default function ResetPassword() {
             {pending ? (
               <ActivityIndicator color={colors.onAccent} />
             ) : (
-              <Text style={styles.buttonText}>Save password</Text>
+              <Text style={styles.buttonText}>{t("auth.savePassword")}</Text>
             )}
           </Pressable>
         </View>
