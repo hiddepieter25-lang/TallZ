@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { applyCatalogFilters, rankProducts, type CatalogFilters } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
 import { t, tCount, type MessageKey } from "@/lib/i18n";
-import { ProductCard } from "@/components/ProductCard";
+import { MasonryFeed } from "@/components/MasonryFeed";
 import { ErrorState } from "@/components/ErrorState";
 import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 
@@ -27,10 +26,9 @@ const CHIPS: { label: MessageKey; filters: CatalogFilters }[] = [
 ];
 
 /**
- * The whole catalog, searchable and filterable — and, since the quiz now has
- * somewhere to live, sorted to the user's answers. This is the screen the
- * quiz card promises: "the order changes to match". Until the catalog context
- * existed, no screen actually used the answers.
+ * The whole catalog, searchable and filterable, ordered by the user's quiz
+ * answers, and laid out as a three-column masonry feed — photos in their own
+ * proportions rather than cropped to a uniform grid.
  */
 export default function Search() {
   const { products, answers, hasAnswers, error, reload } = useCatalog();
@@ -106,18 +104,10 @@ export default function Search() {
         </Text>
       </View>
 
-      <FlatList
-        data={results}
-        keyExtractor={(p) => p.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.list}
-        keyboardShouldPersistTaps="handled"
-        initialNumToRender={8}
-        windowSize={7}
-        removeClippedSubviews
-        renderItem={({ item }) => <ProductCard product={item} placement="explore" />}
-        ListEmptyComponent={
+      <MasonryFeed
+        products={results}
+        placement="explore"
+        empty={
           <Text style={styles.empty}>
             {query || activeChip !== null ? t("search.emptyFiltered") : t("search.empty")}
           </Text>
@@ -154,7 +144,5 @@ const styles = StyleSheet.create({
   chipText: { ...type.label, color: colors.foreground },
   chipTextOn: { color: colors.onAccent },
   count: { ...type.label, color: colors.muted, marginBottom: space.sm },
-  list: { paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xxl },
-  row: { gap: space.md, marginBottom: space.xl },
   empty: { ...type.small, color: colors.muted, textAlign: "center", paddingVertical: space.xxl },
 });

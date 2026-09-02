@@ -38,7 +38,7 @@ export default function Home() {
   // themselves come from the shared catalog rather than a second fetch.
   useEffect(() => {
     if (!products) return;
-    void getTopPicks(products, 4, answers).then(setPicks);
+    void getTopPicks(products, 3, answers).then(setPicks);
   }, [products, answers]);
 
   const choose = async (state: "all" | "essential") => {
@@ -67,7 +67,7 @@ export default function Home() {
       <FlatList
         data={picks}
         keyExtractor={(p) => p.id}
-        numColumns={2}
+        numColumns={3}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => <ProductCard product={item} />}
@@ -173,7 +173,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
 
   list: { paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.xxl },
-  row: { gap: space.md, marginBottom: space.xl },
+  // Three across on a 390pt phone leaves each card narrow, so the gap tightens.
+  row: { gap: space.sm, marginBottom: space.xl },
 
   logo: { width: 110, height: 54, marginBottom: space.xl },
   eyebrow: { ...type.label, color: colors.muted },

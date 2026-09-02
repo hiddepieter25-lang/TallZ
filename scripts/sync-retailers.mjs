@@ -27,10 +27,15 @@ import {
 } from "./lib/supabase-write.mjs";
 
 const SOURCE_TYPE = "shopify_products_json";
-const FETCH_LIMIT = 100; // page 1 only, same as the manual flow — no pagination
-const CANDIDATE_POOL = 100; // don't pre-truncate candidates before dedup; the
+// Shopify caps /products.json at 250 per page. Asking for 100 left 60% of a
+// large retailer unread every single run.
+const FETCH_LIMIT = 250;
+const CANDIDATE_POOL = 250; // don't pre-truncate candidates before dedup; the
 // per-run cap on genuinely *new* inserts lives in insertNewProducts (maxNew)
-const MAX_NEW_PER_RUN = 20;
+// Was 20, which throttled a 250-product retailer to twelve weeks of catching
+// up. The cap exists so one enormous retailer cannot flood the catalog in a
+// single run; 60 keeps that guard while letting a shop land in a few runs.
+const MAX_NEW_PER_RUN = 60;
 
 async function syncRetailer(supabase, retailer) {
   // Re-asked every run, not just when the retailer was first approved. A shop

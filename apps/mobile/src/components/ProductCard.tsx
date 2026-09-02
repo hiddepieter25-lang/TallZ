@@ -23,11 +23,19 @@ export function fitLine(product: Product): string | null {
 export function ProductCard({
   product,
   placement = "feed",
+  aspectRatio,
+  onAspectRatio,
 }: {
   product: Product;
   /** Which surface the card is on — kept on every event so the admin analytics
    *  and the ranking signal can tell the home grid from search results. */
   placement?: Placement;
+  /** Height of the image relative to its width. Omitted means the uniform 3:4
+   *  grid; the masonry feed passes the photo's real shape instead. */
+  aspectRatio?: number;
+  /** Reports the photo's real shape once it loads, so a masonry layout can
+   *  place the next card against a column height it actually knows. */
+  onAspectRatio?: (productId: string, ratio: number) => void;
 }) {
   const router = useRouter();
   const { isSaved, toggleSave } = useCatalog();
@@ -64,7 +72,7 @@ export function ProductCard({
         accessibilityRole="button"
         accessibilityLabel={t("card.open", { name: product.name, retailer: product.retailer })}
       >
-        <View style={styles.imageWrap}>
+        <View style={[styles.imageWrap, aspectRatio ? { aspectRatio } : null]}>
           {photoUrl ? (
             <Image
               source={{ uri: photoUrl }}
@@ -72,6 +80,10 @@ export function ProductCard({
               contentFit="cover"
               transition={150}
               onError={() => setImageFailed(true)}
+              onLoad={(e) => {
+                const { width, height } = e.source ?? {};
+                if (width && height) onAspectRatio?.(product.id, width / height);
+              }}
             />
           ) : (
             <View style={[styles.image, styles.placeholder]}>

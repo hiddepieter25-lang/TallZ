@@ -12,6 +12,7 @@ import {
 } from "@expo-google-fonts/archivo";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CatalogProvider } from "@/lib/catalog";
+import { PhoneFrame } from "@/components/PhoneFrame";
 import { supabase } from "@/lib/supabase";
 import { isRecovery, parseAuthLink } from "@/lib/deep-links";
 import { colors } from "@/lib/theme";
@@ -145,12 +146,14 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <CatalogProvider>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </CatalogProvider>
-      </AuthProvider>
+      <PhoneFrame>
+        <AuthProvider>
+          <CatalogProvider>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </CatalogProvider>
+        </AuthProvider>
+      </PhoneFrame>
     </SafeAreaProvider>
   );
 }

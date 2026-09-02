@@ -110,6 +110,12 @@ export interface Product {
   createdAt: string;
 }
 
+// A product with no photo never reaches a screen: product_images is an inner
+// join, so the database drops it rather than the app rendering a grey box with
+// a link. The 18 that existed were all from the nine hand-entered non-Shopify
+// retailers, which have no feed to pull an image from — there was no photo to
+// go and fetch. They are set inactive too, so admin counts match what users see.
+//
 // Backed by Supabase (retailers/products/tall_sizes — see
 // MARKET_RESEARCH.md §4.4 for the schema this implements) rather than a
 // hardcoded list, so the catalog reflects the real worldwide retailer
@@ -118,7 +124,7 @@ export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, price_cents, currency, style_tags, category, size_note, fit, inseam_cm, sleeve_cm, body_length_cm, fit_notes, product_url, color, material, pattern, gender, created_at, retailers(id, name, region, shipping_countries), product_images(image_url, sort_order)"
+      "id, name, price_cents, currency, style_tags, category, size_note, fit, inseam_cm, sleeve_cm, body_length_cm, fit_notes, product_url, color, material, pattern, gender, created_at, retailers(id, name, region, shipping_countries), product_images!inner(image_url, sort_order)"
     )
     .eq("active", true)
     .order("created_at", { ascending: true });
