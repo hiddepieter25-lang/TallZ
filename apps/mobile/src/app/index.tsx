@@ -26,7 +26,7 @@ import { colors, radius, space, type, MIN_TAP } from "@/lib/theme";
 export default function Home() {
   const router = useRouter();
   const { session } = useAuth();
-  const { products, hasAnswers, error, reload } = useCatalog();
+  const { products, answers, hasAnswers, error, reload } = useCatalog();
   const [picks, setPicks] = useState<Product[] | null>(null);
   const [needsConsent, setNeedsConsent] = useState(false);
 
@@ -38,8 +38,8 @@ export default function Home() {
   // themselves come from the shared catalog rather than a second fetch.
   useEffect(() => {
     if (!products) return;
-    void getTopPicks(products, 4).then(setPicks);
-  }, [products]);
+    void getTopPicks(products, 4, answers).then(setPicks);
+  }, [products, answers]);
 
   const choose = async (state: "all" | "essential") => {
     await setConsent(state);

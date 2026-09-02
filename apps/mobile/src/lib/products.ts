@@ -473,16 +473,19 @@ const MIN_POPULAR_SCORE = 3;
  *   to lead a shop window with. The website filtered on this for the same reason.
  * - **One per retailer among the popular picks.** The next two are the same
  *   blazer in two colours; four near-identical items doesn't show any range.
- * - **Topped up by recency, not padding.** Same recipe the website used —
- *   photographed, recent, spread across retailers.
+ * - **Topped up to the user's taste.** The slots popularity can't fill are
+ *   filled by the same ranking Search and Explore use, so someone who answered
+ *   the quiz sees their own four rather than everyone's four. Without answers
+ *   this falls back to newest-first, which is what the website did.
  *
- * Today that means roughly one popular pick and three new arrivals. As real
+ * Today that means roughly one popular pick and three matched to taste. As real
  * traffic accumulates the balance tips on its own, with nothing to change here.
  */
 export function selectTopPicks(
   products: Product[],
   scores: ProductScore[],
-  count = 4
+  count = 4,
+  answers: QuizAnswers = { swipeTags: [], occasions: [] }
 ): Product[] {
   const withPhoto = products.filter((p) => p.imageUrl);
   const byId = new Map(withPhoto.map((p) => [p.id, p]));
@@ -502,13 +505,18 @@ export function selectTopPicks(
   }
 
   if (picked.length < count) {
-    // Sorted newest-first and then round-robined, so the queue is each
-    // retailer's newest in turn. The website took a fixed 24-item window first,
-    // which worked at its catalog size; at 344 products a single sync writes ~89
-    // rows with near-identical timestamps, so that window is now mostly one
-    // shop — and the top-up handed back two items from it.
-    const spread = diversifyByRetailer(
-      [...withPhoto].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    // Newest first, then ranked. Order matters: rankProducts groups into score
+    // tiers and preserves the order it was given inside each one, so sorting by
+    // date first means "best match, newest of those" rather than either alone.
+    // With no answers every product scores zero, one tier holds everything, and
+    // this reduces to the newest-first, retailer-diversified list the website
+    // used — the previous behaviour, unchanged.
+    //
+    // Sorting by date is not optional: at this catalog size one sync writes ~89
+    // rows with near-identical timestamps, so an unsorted pass is mostly one shop.
+    const spread = rankProducts(
+      [...withPhoto].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      answers
     );
 
     // Two passes. The first keeps the one-per-retailer rule, so topping up
@@ -540,14 +548,15 @@ export function selectTopPicks(
  */
 export async function getTopPicks(
   products: Product[],
-  count = 4
+  count = 4,
+  answers: QuizAnswers = { swipeTags: [], occasions: [] }
 ): Promise<Product[]> {
   const { data, error } = await supabase.rpc("top_products", { p_limit: 12 });
   if (error) {
     // Popularity is an enhancement, not a requirement. Losing it should cost
     // the ranking, not the shop window.
     console.error("Couldn't read product popularity:", error.message);
-    return selectTopPicks(products, [], count);
+    return selectTopPicks(products, [], count, answers);
   }
 
   const scores: ProductScore[] = (data ?? []).map(
@@ -557,7 +566,7 @@ export async function getTopPicks(
     })
   );
 
-  return selectTopPicks(products, scores, count);
+  return selectTopPicks(products, scores, count, answers);
 }
 
 // Flat grayscale ramp (no warm tint, no gradient) — matches DESIGN.md's

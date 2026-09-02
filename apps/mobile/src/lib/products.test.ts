@@ -436,6 +436,35 @@ describe("selectTopPicks", () => {
     expect(new Set(picks.map((p) => p.retailer)).size).toBe(4);
   });
 
+  it("fills the remaining slots to the user's taste", () => {
+    // The picks were identical for every user: popularity, then newest. Someone
+    // who answered six questions about their style saw the same four as someone
+    // who had never opened the quiz.
+    const denim = product({ id: "denim", retailer: "A", tags: ["denim"], createdAt: "2020-01-01T00:00:00Z" });
+    const evening = product({ id: "evening", retailer: "B", tags: ["evening"], createdAt: "2026-01-01T00:00:00Z" });
+
+    const forDenimFan = selectTopPicks([evening, denim], [], 1, { swipeTags: ["denim"], occasions: [] });
+    const forEveryoneElse = selectTopPicks([evening, denim], [], 1);
+
+    // Older, but it matches — taste beats recency once there is taste to go on.
+    expect(forDenimFan[0].id).toBe("denim");
+    expect(forEveryoneElse[0].id).toBe("evening");
+  });
+
+  it("still leads with a popular product, whatever the taste", () => {
+    // Popularity is what other people did; the quiz only fills what is left.
+    const popular = product({ id: "popular", retailer: "A", tags: ["evening"] });
+    const matches = product({ id: "matches", retailer: "B", tags: ["denim"] });
+
+    const picks = selectTopPicks([matches, popular], [{ productId: "popular", score: 5 }], 2, {
+      swipeTags: ["denim"],
+      occasions: [],
+    });
+
+    expect(picks[0].id).toBe("popular");
+    expect(picks[1].id).toBe("matches");
+  });
+
   it("repeats a retailer only when the catalog leaves no choice", () => {
     // Deliberate: with just three photographed products across two retailers,
     // showing three beats withholding one for the sake of a rule.
